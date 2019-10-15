@@ -1,0 +1,28 @@
+{% set data = load_setup_py_data(setup_file='../setup.py', from_recipe_dir=True) %}
+
+package:
+  name: hpbu
+  version: {{ data.get('version') }}
+
+source:
+  - path: ..
+
+build:
+  number: 0
+  script: {{ PYTHON }} -m pip install . -vv
+
+requirements:
+  host:
+    - python >=3.7
+    - pip
+
+  run:
+    - python
+    - numpy
+    - scipy
+    - simplejson
+    - scikit-learn
+
+test:
+  imports:
+    - hpbu
