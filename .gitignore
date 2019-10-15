@@ -1,0 +1,17 @@
+*.pyc
+*.sublime*
+*.o
+*.class
+*.lprof
+deps
+dist
+lib
+build
+.*.sw*
+manifest.mf
+node_modules/
+.ipynb_checkpoints
+.DS_Store
+__pycache__
+*.pdf
+.vscode
