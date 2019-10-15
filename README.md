@@ -18,15 +18,17 @@ To install HPBU into your path (Conda is highly recommended!):
 
     pip install .
 
-### RUN
+### Usage
 
 For simple access to the hpbu core module,
 
     import hpbu
 
 You will need to have a script ready that loads a configuration for the model hierarchy.
-An example hierarchy configuration can be found under hpbu/examples, but here is a minimal example:
+An example hierarchy configuration can be found under hpbu/examples, but here is a minimal example,
+which we call 'minimal_config.json':
 
+```json
     {
         "layers": [
             {
@@ -64,11 +66,13 @@ An example hierarchy configuration can be found under hpbu/examples, but here is
             "bias_gain": 0.1
         }
     }
+```
 
 Coming back to the script that loads the configuration.
 Again, you can find an example under hpbu/examples.
 But also, here is a minimal example:
 
+```python
     import uuid
     import os
     import time
@@ -156,7 +160,7 @@ But also, here is a minimal example:
 
     if __name__ == "__main__":
         main()
-
+```
 
 These examples just show the general setup. By itself it won't do anything interesting.
 
