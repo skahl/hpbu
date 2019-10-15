@@ -16,7 +16,7 @@ To build HPBU, using conda-build:
 
 To install HPBU into your path (Conda is highly recommended!):
 
-    python setup.py install
+    pip install .
 
 ### RUN
 
