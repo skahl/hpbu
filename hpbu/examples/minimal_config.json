@@ -1,0 +1,43 @@
+{
+    "layers": [
+        {
+            "type": "MotorControl",
+            "name": "MC",
+            "color": "Red"
+        },
+        {
+            "type": "Vision",
+            "name": "Vision",
+            "color": "Blue"
+        },
+        {
+            "type": "Sequence",
+            "name": "Seq",
+            "color": "Yellow",
+            "parameters":
+            {
+                "__comment_gamma": "gamma extension threshold (seconds)",
+                "gamma": 0.2
+            }
+        },
+        {
+            "type": "Top",
+            "name": "Schm",
+            "color": "Green"
+        }
+    ],
+    "parameters": {
+        "my_id": "Agent",
+        "personmodel_file": "",
+        "interaction_influence_mode": "focus_only",
+        "self_supervised": true,
+        "update_delay": 0.001,
+        "memory_len": 100,
+        "knowledge_file": "knowledge.json",
+        "store_knowledge": true,
+        "read_knowledge": true,
+        "vis_server": "127.0.0.1",
+        "time_step": 0.01,
+        "bias_gain": 0.1
+    }
+}

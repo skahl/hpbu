@@ -31,16 +31,19 @@ class Config(object):
 
     def __init__(self, filename=None):
         self.layers = []
-        self.data_file = filename
+        self.config_file = filename
+        self.knowledge_file = None
         self.parameters= {}
+        self.storage = None
+        self.knowledge = None
 
 
 
-    def get_data_storage(self):
-        if self.data_file is not None:
+    def get_config_storage(self):
+        if self.config_file is not None:
             try:
-                print("\t # # # loading:", self.data_file)
-                filereader = open(self.data_file, 'r')
+                print("\t # # # loading config:", self.config_file)
+                filereader = open(self.config_file, 'r')
                 data_json = filereader.read()
                 self.storage = json.loads(data_json)
                 filereader.close()
@@ -48,6 +51,22 @@ class Config(object):
             except IOError as error:
                 print(error)
                 sys.exit(1)
+        else:
+            return None
+
+    
+    def get_knowledge_storage(self):
+        if self.knowledge_file is not None:
+            try:
+                print("\t # # # loading knowledge:", self.knowledge_file)
+                filereader = open(self.knowledge_file, 'r')
+                data_json = filereader.read()
+                self.knowledge = json.loads(data_json)
+                filereader.close()
+                return self.knowledge
+            except IOError as error:
+                print(error)
+                return {}
         else:
             return None
 
@@ -71,6 +90,7 @@ class Config(object):
             self.parameters['my_id'] = params['my_id']  # agent id or name, which is to be configured here
             self.parameters['memory_len'] = params['memory_len']  # transient memory length
             self.parameters['update_delay'] = params['update_delay']  # hierarchy update delay
+            self.knowledge_file = params['knowledge_file']  # where to read the knowledge from
             self.parameters['store_knowledge'] = params['store_knowledge']  # boolean of whether to store learned hypotheses
             self.parameters['read_knowledge'] = params['read_knowledge']  # boolean of whether to read learned hypotheses
             self.parameters['vis_server'] = params['vis_server']  # read ip of visualization server
@@ -82,8 +102,6 @@ class Config(object):
             return True
         else:
             return False
-
-        # TODO: make sure layers receive these parameters
 
 
 
@@ -102,63 +120,92 @@ class Config(object):
 
 
 
-    def store_knowledge_in_storage(self, hierarchy):
-        if self.storage is None:
-            self.storage = self.config.get_data_storage()
-        layers = self.storage["layers"]  # read copy from storage
-        for layer in layers:
-            if layer["type"] in ['MotorControl']:
-                print(hierarchy.layer_io.name, hierarchy.layer_io.hypotheses.reps.keys())
-                layer["knowledge"] = hierarchy.layer_io.hypotheses.serialize()
-            elif layer["type"] == 'Vision':
-                print(hierarchy.layer_vision.name, hierarchy.layer_vision.hypotheses.reps.keys())
-                layer["knowledge"] = hierarchy.layer_vision.hypotheses.serialize()
-            elif layer["type"] in ["Top", "Goals"]:
-                print(hierarchy.layer_top.name, hierarchy.layer_top.hypotheses.reps.keys())
-                layer["knowledge"] = hierarchy.layer_top.hypotheses.serialize()
-            else:
-                for hierarchy_layer in hierarchy.layer_between:
-                    if layer["name"] == hierarchy_layer.name:
-                        print(hierarchy_layer.name, hierarchy_layer.hypotheses.reps.keys())
-                        layer["knowledge"] = hierarchy_layer.hypotheses.serialize()
+    def store_knowledge_in_storage(self, hierarchy):   
+        if self.knowledge_file is not None:
+            self.knowledge = {}
+            layers = self.storage["layers"]  # read copy from storage
+            for layer in layers:
+                if layer["type"] in ['MotorControl']:
+                    print(hierarchy.layer_io.name, hierarchy.layer_io.hypotheses.reps.keys())
+                    if layer["name"] not in self.knowledge:
+                        self.knowledge[layer["name"]] = {}
+                    if "knowledge" not in self.knowledge[layer["name"]]:
+                        self.knowledge[layer["name"]] = {}
+                    
+                    self.knowledge[layer["name"]]["type"] = layer["type"]
+                    self.knowledge[layer["name"]]["knowledge"] = hierarchy.layer_io.hypotheses.serialize()
+                elif layer["type"] == 'Vision':
+                    print(hierarchy.layer_vision.name, hierarchy.layer_vision.hypotheses.reps.keys())
+                    if layer["name"] not in self.knowledge:
+                        self.knowledge[layer["name"]] = {}
+                    if "knowledge" not in self.knowledge[layer["name"]]:
+                        self.knowledge[layer["name"]] = {}
 
-        self.storage["layers"] = layers  # write changed copy back to storage
+                    self.knowledge[layer["name"]]["type"] = layer["type"]
+                    self.knowledge[layer["name"]]["knowledge"] = hierarchy.layer_vision.hypotheses.serialize()
+                elif layer["type"] in ["Top", "Goals"]:
+                    print(hierarchy.layer_top.name, hierarchy.layer_top.hypotheses.reps.keys())
+                    if layer["name"] not in self.knowledge:
+                        self.knowledge[layer["name"]] = {}
+                    if "knowledge" not in self.knowledge[layer["name"]]:
+                        self.knowledge[layer["name"]] = {}
+                        
+                    self.knowledge[layer["name"]]["type"] = layer["type"]
+                    self.knowledge[layer["name"]]["knowledge"] = hierarchy.layer_top.hypotheses.serialize()
+                else:
+                    for hierarchy_layer in hierarchy.layer_between:
+                        if layer["name"] == hierarchy_layer.name:
+                            print(hierarchy_layer.name, hierarchy_layer.hypotheses.reps.keys())
+                            if layer["name"] not in self.knowledge:
+                                self.knowledge[layer["name"]] = {}
+                            if "knowledge" not in self.knowledge[layer["name"]]:
+                                self.knowledge[layer["name"]] = {}
+                        
+                            self.knowledge[layer["name"]]["type"] = layer["type"]
+                            self.knowledge[layer["name"]]["knowledge"] = hierarchy_layer.hypotheses.serialize()
 
-        try:
-            print("writing:", self.data_file)
-            filewriter = open(self.data_file, 'w')
-            data_json = json.dumps(self.storage, indent=4)  # indent 4 to make json readable
-            filewriter.write(data_json)
-            filewriter.close()
-        except IOError as error:
-            print(error)
-            sys.exit(1)
+            try:
+                print("writing:", self.knowledge_file)
+                filewriter = open(self.knowledge_file, 'w')
+                data_json = json.dumps(self.knowledge, indent=4)  # indent 4 to make json readable
+                filewriter.write(data_json)
+                filewriter.close()
+            except IOError as error:
+                print(error)
+                sys.exit(1)
+        else:
+            print("No knowledgefile was configured! NOT SAVING KNOWLEDGE!")
 
 
 
     def restore_knowledge_from_storage(self, top_layer, between_layers, io_layer, vision_layer):
-        if self.storage is None:
-            self.storage = self.config.get_data_storage()
-        layers = self.storage["layers"]  # read copy from storage
-        last_layer = None
-        for layer in layers:
+        if self.knowledge is None and self.knowledge_file is not None:
+            self.knowledge = self.get_knowledge_storage()
+
+        # look for example knowledge storage in (possibly) old config storage
+        if "knowledge" in self.storage["layers"][0]:
+            # if there still is knowledge in the config, OVERRIDE and load from that
+            for layer in self.storage["layers"]:
+                self.knowledge[layer["name"]] = {"type": layer["type"], "knowledge": layer["knowledge"]}
+        
+        for layer_name, layer in self.knowledge.items():
             if layer["type"] in ['MotorControl']:
                 if "knowledge" in layer:
-                    print("restoring knowledge for layer", layer["name"])
+                    print("restoring knowledge for layer", layer_name)
                     io_layer.hypotheses = io_layer.hypotheses.deserialize(layer["knowledge"])
                     print("hypos:", io_layer.hypotheses.reps.keys())
                     io_layer.reset()
                     last_layer = io_layer
             elif layer["type"] == 'Vision':
                 if "knowledge" in layer:
-                    print("restoring knowledge for layer", layer["name"])
+                    print("restoring knowledge for layer", layer_name)
                     vision_layer.hypotheses = vision_layer.hypotheses.deserialize(layer["knowledge"])
                     print("hypos:", vision_layer.hypotheses.reps.keys())
                     vision_layer.reset()
                     last_layer = vision_layer
             elif layer["type"] in ["Top"]:
                 if "knowledge" in layer:
-                    print("restoring knowledge for layer", layer["name"])
+                    print("restoring knowledge for layer", layer_name)
                     top_layer.hypotheses = top_layer.hypotheses.deserialize(layer["knowledge"], last_layer)
                     print("hypos:", top_layer.hypotheses.reps.keys())
                     top_layer.reset()
@@ -166,8 +213,8 @@ class Config(object):
             else:
                 if "knowledge" in layer:
                     for hierarchy_layer in between_layers:
-                        if layer["name"] == hierarchy_layer.name:
-                            print("restoring knowledge for layer", layer["name"])
+                        if layer_name == hierarchy_layer.name:
+                            print("restoring knowledge for layer", layer_name)
                             hierarchy_layer.hypotheses = hierarchy_layer.hypotheses.deserialize(layer["knowledge"], last_layer)
                             print("hypos:", hierarchy_layer.hypotheses.reps.keys())
                             hierarchy_layer.reset()

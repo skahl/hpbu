@@ -267,8 +267,8 @@ class Layer(object):
             self.log(4, "no belief update!")
         
         # fixate the intention dependent kalman gain
-        # self.set_intention_dependent_kalman_gain()
-        self.set_variable_kalman_gain()
+        self.set_intention_dependent_kalman_gain()
+        # self.set_variable_kalman_gain()
     
         # self.log(1, "gain bias:", bias, "resulting K:", self.K)
         # gain_gain is how strong the bias is enforced
@@ -355,6 +355,9 @@ class Layer(object):
             elif self.name in ["Realizations", "Vision", "MC"]:
                 # increase Kalman Gain for these layers
                 self.K = gain_bias # 0.9
+
+        
+        self.K = kalman_gain(self.free_energy, self.PE.precision, self.K) #, gain_gain=0.66)
 
         self.log(3, "K =", self.K, "for", self.name)
 
@@ -480,9 +483,9 @@ class Layer(object):
         self.lower_layer_evidence = None
 
         # local attributes
-        if not self.params["self_supervised"]:
-            self.bu_posterior = None  
-            self.td_posterior = None  
+        # if self.params["self_supervised"]:
+        #     self.bu_posterior = None  
+        #     self.td_posterior = None  
         self.likelihood = None
         # self.best_hypo = None
         self.lower_layer_hypos = None

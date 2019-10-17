@@ -206,40 +206,42 @@ class Hypotheses(object):
 
     def serialize(self):
         D = {}
-        D["rep_types"] = list(self.reps.values())[0].__class__.__name__
-        D["reps"] = {key: rep.serialize() for key, rep in self.reps.items()}
-        D["dpd"] = self.dpd.tolist()
-        D["id_counter"] = self.id_counter
+        if len(self.reps) > 0:
+            D["rep_types"] = list(self.reps.values())[0].__class__.__name__
+            D["reps"] = {key: rep.serialize() for key, rep in self.reps.items()}
+            D["dpd"] = self.dpd.tolist()
+            D["id_counter"] = self.id_counter
         return D
 
 
     def deserialize(self, D, deserialized_lower_layer=None):
-        rep_type = D["rep_types"]
-        reps = {}
-        for key, rep in D["reps"].items():
-            try:
-                key = float(key)
-            except:
-                key = int(key)
-            obj = None
-            if rep_type == "Coord":
-                self.id_counter = D["id_counter"]
-                obj = Coord()
-            if rep_type == "Representation":
-                self.id_counter = D["id_counter"]
-                obj = Representation(key)
-            if rep_type == "Cluster":
-                self.id_counter = D["id_counter"]  # = int(float(np.max(list(D["reps"].keys()))))
-                obj = Cluster(key)
-            if rep_type == "Sequence":
-                self.id_counter = D["id_counter"]  # = int(float(np.max(list(D["reps"].keys()))))
-                obj = Sequence(key)
-            reps[key] = obj.deserialize(rep, deserialized_lower_layer)
-        self.reps = reps
-        self.dpd = np.array(D["dpd"])
+        if "rep_types" in D:
+            rep_type = D["rep_types"]
+            reps = {}
+            for key, rep in D["reps"].items():
+                try:
+                    key = float(key)
+                except:
+                    key = int(key)
+                obj = None
+                if rep_type == "Coord":
+                    self.id_counter = D["id_counter"]
+                    obj = Coord()
+                if rep_type == "Representation":
+                    self.id_counter = D["id_counter"]
+                    obj = Representation(key)
+                if rep_type == "Cluster":
+                    self.id_counter = D["id_counter"]  # = int(float(np.max(list(D["reps"].keys()))))
+                    obj = Cluster(key)
+                if rep_type == "Sequence":
+                    self.id_counter = D["id_counter"]  # = int(float(np.max(list(D["reps"].keys()))))
+                    obj = Sequence(key)
+                reps[key] = obj.deserialize(rep, deserialized_lower_layer)
+            self.reps = reps
+            self.dpd = np.array(D["dpd"])
 
-        self.equalize()
-        self.update_idx_id_mapping()
+            self.equalize()
+            self.update_idx_id_mapping()
         return self
 
 

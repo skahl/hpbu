@@ -187,12 +187,15 @@ class SequenceLayer(Layer):
                 self.td_posterior = set_hypothesis_P(self.td_posterior, lrp_idx, critical_intention)
                 self.td_posterior = norm_dist(self.td_posterior, smooth=True)
                 self.intention = lrp
+                # reset production candidate
+                self.production_candidate = None
 
             if "done" in self.long_range_projection:
                 self.tmp_seq = []
                 self.tmp_delay = []
 
-        elif self.higher_layer_prediction is not None and self.params["self_supervised"]:
+        # and self.params["self_supervised"]: # TODO: allow higher level influence during learning?
+        elif self.higher_layer_prediction is not None: 
             self.log(4, "higher layer projection:", self.higher_layer_prediction)
             higher_layer = copy(self.higher_layer_prediction)
             P_C = higher_layer[0]  # higher layer posterior distribution
@@ -321,7 +324,7 @@ class SequenceLayer(Layer):
             # self.log(3, "delay:\t", cur_delay, '\t>\t', average_delay)
             # self.log(1, "surprise:\t", self.PE)
             # not expecting the delay duration of a jump and average delay is smaller than current delay
-            if not self.params["self_supervised"]\
+            if self.params["self_supervised"]\
                     and ltmpseq > 3 and cur_delay > average_delay\
                     and (len(self.hypotheses.reps) < 3 or self.PE.is_surprising()):
                 self.log(3, "New time step:", cur_delay, ">", average_delay)

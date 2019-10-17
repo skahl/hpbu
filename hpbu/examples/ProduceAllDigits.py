@@ -67,7 +67,7 @@ def main():
     # config_filename = "full_single_user_corpus_conf.json"
     # _input =  [11, 8, 9, 5, 2, 3, 7, 6, 4, 10]  # 9-0
     # _meaning = [ 5, 4, 1, 6, 2, 3, 8, 7,  0,  9]
-    config_filename = "single_user_filtered_corpus_conf.json"
+    config_filename = "produce_all_digits_conf.json"
     _input =   [5, 10, 3, 2, 4, 11, 9, 8, 7, 6]
     _meaning = [0,  1, 2, 3, 4,  5, 6, 7, 8, 9]
     # _input = [4, 8]
@@ -82,7 +82,7 @@ def main():
     if config_filename is not None:
         my_path = os.path.dirname(os.path.abspath(__file__))
         hierarchy_config = hpbu.Config(my_path + os.sep + config_filename)
-        storage = hierarchy_config.get_data_storage()
+        storage = hierarchy_config.get_config_storage()
         if storage is not None:
             if not hierarchy_config.config_layer_from_storage():
                 print("Layer config not available in DB")

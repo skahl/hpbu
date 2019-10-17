@@ -64,6 +64,8 @@ class ClusterLayer(Layer):
         self.lost_sequences = []
         # store system sense of agency estimate
         self.self_estimate = 0.
+        # remember if during this run a new sequence was learned, making clustering necessary
+        self.new_sequences_learned = False
 
         for cluster in self.hypotheses.reps.values():
             # recalculate the cluster prototype
@@ -82,7 +84,7 @@ class ClusterLayer(Layer):
         """ finalize gets called upon the end of the hierarchy main loop
         So for clustering during training, re-cluster at the end of the training session.
         """
-        if not self.params["self_supervised"]:
+        if self.params["self_supervised"] and self.new_sequences_learned:
             self.log(0, "performing expensive '''night cycle''' update, reclustering...")
             self.recalculate_clusters_with_new_hypo()
             self.cluster_statistics()
@@ -220,7 +222,8 @@ class ClusterLayer(Layer):
         """
 
         # decide on extension and of unseen evidence sequence
-        if self.lower_layer_new_hypo is not None and not self.params["self_supervised"]:
+        if self.lower_layer_new_hypo is not None and self.params["self_supervised"]:
+            self.new_sequences_learned = True
             if len(self.hypotheses.reps) == 0:
                 hypo = self.hypotheses.add_hypothesis(Cluster, 0.1)
             else:
