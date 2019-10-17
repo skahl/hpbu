@@ -476,7 +476,7 @@ def free_energy(P, Q):
             c_e = 1/(1+np.exp(-4*(cross_entropy - 0.5)))  # should be maxing out at 1
             F = surprise + c_e
 
-            return F, surprise, c_e
+            return F, surprise, c_e, surprise+cross_entropy
         except Exception as e:
             raise Exception("RuntimeWarning in free_energy(P,Q):", str(e), "P:", P, "Q:", Q)
 

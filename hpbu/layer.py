@@ -166,8 +166,8 @@ class Layer(object):
                     # calculate free energy
                     F = free_energy(P=prior, Q=post)
                     # print("intention:", self.intention, "post:", post.shape, "prior:", prior.shape)
-                    self.PE.new(F[0], prior, post)
                     self.free_energy = F[2]
+                    self.PE.new(surprise=F[3], P=prior, Q=post)
                     # self.log(3, "max for driving signal:", max_p, "posterior:", max_q)
                     self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
@@ -223,7 +223,7 @@ class Layer(object):
             # calculate free energy
             F = free_energy(P=prior, Q=post)
             self.free_energy = F[2]
-            self.PE.new(F[0], prior, post)
+            self.PE.new(surprise=F[3], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.hypotheses.dpd, self.bu_posterior, self.K)
@@ -253,7 +253,7 @@ class Layer(object):
             # calculate free energy
             F = free_energy(P=prior, Q=post)
             self.free_energy = F[2]
-            self.PE.new(F[0], prior, post)
+            self.PE.new(surprise=F[3], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.td_posterior, self.hypotheses.dpd, hl_k)
@@ -341,24 +341,27 @@ class Layer(object):
 
         if self.intention is None:
             # during PERCEPTION
-            if self.name in ["Realizations", "Schm", "Seq"]:
-                # increase Kalman Gain to make these layer susceptible to evidence
-                self.K = gain_bias # 0.9
-            elif self.name in ["Goals", "MC", "Vision"]:
-                # decrease Kalman Gain for these layers
-                self.K = 1 - gain_bias # 0.1
+            self.K = kalman_gain(self.free_energy, self.PE.precision, 1 - gain_bias)
+
+            # if self.name in ["Realizations", "Schm", "Seq"]:
+            #     # increase Kalman Gain to make these layer susceptible to evidence
+            #     self.K = gain_bias # 0.9
+            # elif self.name in ["Goals", "MC", "Vision"]:
+            #     # decrease Kalman Gain for these layers
+            #     self.K = 1 - gain_bias # 0.1
         elif self.intention is not None:
             # during PRODUCTION
-            if self.name in ["Goals", "Schm", "Seq"]:
-                # decrease Kalman Gain for these layers to be less susceptible to evidence
-                self.K = 1 - gain_bias # 0.1
-            elif self.name in ["Realizations", "Vision", "MC"]:
-                # increase Kalman Gain for these layers
-                self.K = gain_bias # 0.9
+
+            self.K = kalman_gain(self.free_energy, self.PE.precision, gain_bias)
+
+            # if self.name in ["Goals", "Schm", "Seq"]:
+            #     # decrease Kalman Gain for these layers to be less susceptible to evidence
+            #     self.K = 1 - gain_bias # 0.1
+            # elif self.name in ["Realizations", "Vision", "MC"]:
+            #     # increase Kalman Gain for these layers
+            #     self.K = gain_bias # 0.9
 
         
-        self.K = kalman_gain(self.free_energy, self.PE.precision, self.K) #, gain_gain=0.66)
-
         self.log(3, "K =", self.K, "for", self.name)
 
 
@@ -484,8 +487,8 @@ class Layer(object):
 
         # local attributes
         # if self.params["self_supervised"]:
-        #     self.bu_posterior = None  
-        #     self.td_posterior = None  
+        self.bu_posterior = None  
+        self.td_posterior = None  
         self.likelihood = None
         # self.best_hypo = None
         self.lower_layer_hypos = None

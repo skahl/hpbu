@@ -81,7 +81,7 @@ def main():
     # config setup
     if config_filename is not None:
         my_path = os.path.dirname(os.path.abspath(__file__))
-        hierarchy_config = hpbu.Config(my_path + os.sep + config_filename)
+        hierarchy_config = hpbu.Config(my_path, config_filename)
         storage = hierarchy_config.get_config_storage()
         if storage is not None:
             if not hierarchy_config.config_layer_from_storage():

@@ -434,10 +434,17 @@ class Coord(object):
         return self == other or self > other
 
     def __sub__(self, other):
-        a = np.array(self.tuple())
-        b = np.array(other.tuple())
-        diff = a - b
-        return np_sqrt(np_dot(diff, diff))
+        # √( r12 + r22 -2r1r2 cos(Φ2 - Φ1) )
+
+        dist = np.sqrt(self.r**2 + other.r**2 - 2 * self.r * other.r * np.cos(other.theta - self.theta))
+
+        return gaussian(dist, 0., 12)
+
+
+        # a = np.array(self.tuple())
+        # b = np.array(other.tuple())
+        # diff = b - a
+        # return np_sqrt(np_dot(diff, diff))
 
     # def __add__(self, other):
     #     r = self.r + other.r

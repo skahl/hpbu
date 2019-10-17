@@ -23,14 +23,16 @@ from __future__ import absolute_import, unicode_literals
 
 # modules
 import sys
+import os
 
 import json
 
 
 class Config(object):
 
-    def __init__(self, filename=None):
+    def __init__(self, path, filename=None):
         self.layers = []
+        self.path = path
         self.config_file = filename
         self.knowledge_file = None
         self.parameters= {}
@@ -42,8 +44,9 @@ class Config(object):
     def get_config_storage(self):
         if self.config_file is not None:
             try:
-                print("\t # # # loading config:", self.config_file)
-                filereader = open(self.config_file, 'r')
+                filepath = self.path + os.sep + self.config_file
+                print("\t # # # loading config:", filepath)
+                filereader = open(filepath, 'r')
                 data_json = filereader.read()
                 self.storage = json.loads(data_json)
                 filereader.close()
@@ -58,8 +61,9 @@ class Config(object):
     def get_knowledge_storage(self):
         if self.knowledge_file is not None:
             try:
-                print("\t # # # loading knowledge:", self.knowledge_file)
-                filereader = open(self.knowledge_file, 'r')
+                filepath = self.path + os.sep + self.knowledge_file
+                print("\t # # # loading knowledge:", filepath)
+                filereader = open(filepath, 'r')
                 data_json = filereader.read()
                 self.knowledge = json.loads(data_json)
                 filereader.close()

@@ -114,7 +114,7 @@ class VisionLayer(SequenceLayer):
 
                 # estimate if that last movement was actually drawn (very low cost version)
                 phi_jump = np_abs(phi[1])
-                if phi_jump > 40:
+                if phi_jump > 70:
                     self.isDrawing = False
                     self.log(3, "Possible undrawn jump!", phi_jump)
 
@@ -152,7 +152,7 @@ class VisionLayer(SequenceLayer):
         """ Fit the given radians to the distribution of radians.
         """
         dpd = self.hypotheses.dpd
-        lh = np.array([[gaussian(rad, np.round(i, 3), 0.1), np.round(i, 3)] for i in dpd[:, 1]])  # sigma = 0.17
+        lh = np.array([[gaussian(rad, np.round(i, 3), 0.05), np.round(i, 3)] for i in dpd[:, 1]])  # sigma = 0.17
         return lh
 
 
@@ -248,8 +248,8 @@ class VisionLayer(SequenceLayer):
         """ Calculate the posterior for the sequence layer, based on evidence from
         predicted lower level activity.
         """
-        self.bu_posterior = norm_dist(self.likelihood, smooth=True)
-        # self.bu_posterior = posterior(self.hypotheses.dpd, self.likelihood, smooth=True)
+        # self.bu_posterior = norm_dist(self.likelihood, smooth=True)
+        self.bu_posterior = posterior(self.hypotheses.dpd, self.likelihood, smooth=True)
 
 
 
