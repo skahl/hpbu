@@ -408,37 +408,37 @@ class Coord(object):
     def __ne__(self, other):
         return self.theta != other.theta or self.drawing != other.drawing  # self.r != other.r or 
 
-    def __lt__(self, other):
-        # TODO: care about edge case: -pi == pi
-        c_s = self.tuple()
-        n_c_s = np_sqrt(np_dot(c_s, c_s))
-        c_o = other.tuple()
-        n_c_o = np_sqrt(np_dot(c_o, c_o))
-        # return self.r < other.r or self.theta < other.theta
-        return n_c_s < n_c_o
+    # def __lt__(self, other):
+    #     # TODO: care about edge case: -pi == pi
+    #     c_s, _ = self.tuple()
+    #     n_c_s = np_sqrt(np_dot(c_s, c_s))
+    #     c_o, _ = other.tuple()
+    #     n_c_o = np_sqrt(np_dot(c_o, c_o))
+    #     # return self.r < other.r or self.theta < other.theta
+    #     return n_c_s < n_c_o
 
-    def __le__(self, other):
-        return self == other or self < other
+    # def __le__(self, other):
+    #     return self == other or self < other
 
-    def __gt__(self, other):
-        # TODO: care about edge case: -pi == pi
-        # return self.r > other.r or self.theta > other.theta
-        c_s = self.tuple()
-        n_c_s = np_sqrt(np_dot(c_s, c_s))
-        c_o = other.tuple()
-        n_c_o = np_sqrt(np_dot(c_o, c_o))
-        # return self.r < other.r or self.theta < other.theta
-        return n_c_s > n_c_o
+    # def __gt__(self, other):
+    #     # TODO: care about edge case: -pi == pi
+    #     # return self.r > other.r or self.theta > other.theta
+    #     c_s, _ = self.tuple()
+    #     n_c_s = np_sqrt(np_dot(c_s, c_s))
+    #     c_o, _ = other.tuple()
+    #     n_c_o = np_sqrt(np_dot(c_o, c_o))
+    #     # return self.r < other.r or self.theta < other.theta
+    #     return n_c_s > n_c_o
 
-    def __ge__(self, other):
-        return self == other or self > other
+    # def __ge__(self, other):
+    #     return self == other or self > other
 
     def __sub__(self, other):
         # √( r12 + r22 -2r1r2 cos(Φ2 - Φ1) )
 
         dist = np.sqrt(self.r**2 + other.r**2 - 2 * self.r * other.r * np.cos(other.theta - self.theta))
 
-        return gaussian(dist, 0., 12)
+        return 1 - gaussian(dist, 0., 24)
 
 
         # a = np.array(self.tuple())
@@ -457,4 +457,4 @@ class Coord(object):
     def tuple(self):
         cartesian_x = self.r * np.cos(self.theta)
         cartesian_y = self.r * np.sin(self.theta)
-        return np.array([cartesian_x, cartesian_y])
+        return [cartesian_x, cartesian_y, self.drawing]

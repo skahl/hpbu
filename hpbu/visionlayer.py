@@ -248,8 +248,8 @@ class VisionLayer(SequenceLayer):
         """ Calculate the posterior for the sequence layer, based on evidence from
         predicted lower level activity.
         """
-        # self.bu_posterior = norm_dist(self.likelihood, smooth=True)
-        self.bu_posterior = posterior(self.hypotheses.dpd, self.likelihood, smooth=True)
+        self.bu_posterior = norm_dist(self.likelihood, smooth=True)
+        # self.bu_posterior = posterior(self.hypotheses.dpd, self.likelihood, smooth=True)
 
 
 

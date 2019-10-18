@@ -321,13 +321,16 @@ class SequenceLayer(Layer):
             and its free-energy is higher than average layer free-energy
             and the current time delay is bigger than average delay
             """
-            # self.log(3, "delay:\t", cur_delay, '\t>\t', average_delay)
-            # self.log(1, "surprise:\t", self.PE)
+            # self.log(4, "delay:\t", cur_delay, '\t>\t', average_delay, '\n',
+            # self.log(3, "\t\tsurprise:\t", self.PE)
+            
             # not expecting the delay duration of a jump and average delay is smaller than current delay
             if self.params["self_supervised"]\
                     and ltmpseq > 3 and cur_delay > average_delay\
                     and (len(self.hypotheses.reps) < 3 or self.PE.is_surprising()):
-                self.log(3, "New time step:", cur_delay, ">", average_delay)
+
+                self.log(0, "\t\tsurprise:\t", self.PE)
+                self.log(0, "="*10,">  ADDED!\n")
 
                 # add new sequence
                 new_hypo = self.hypotheses.add_hypothesis(Sequence, P=0.1)

@@ -16,6 +16,7 @@ setup(
         'numpy',
         'scipy',
         'sklearn',
-        'simplejson'
+        'simplejson',
+        'fastdtw'
     ],
 )

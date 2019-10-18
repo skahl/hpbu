@@ -166,8 +166,8 @@ class Layer(object):
                     # calculate free energy
                     F = free_energy(P=prior, Q=post)
                     # print("intention:", self.intention, "post:", post.shape, "prior:", prior.shape)
-                    self.free_energy = F[2]
-                    self.PE.new(surprise=F[3], P=prior, Q=post)
+                    self.free_energy = F[0]
+                    self.PE.new(surprise=F[2], P=prior, Q=post)
                     # self.log(3, "max for driving signal:", max_p, "posterior:", max_q)
                     self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
@@ -222,8 +222,8 @@ class Layer(object):
 
             # calculate free energy
             F = free_energy(P=prior, Q=post)
-            self.free_energy = F[2]
-            self.PE.new(surprise=F[3], P=prior, Q=post)
+            self.free_energy = F[0]
+            self.PE.new(surprise=F[2], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.hypotheses.dpd, self.bu_posterior, self.K)
@@ -252,8 +252,8 @@ class Layer(object):
 
             # calculate free energy
             F = free_energy(P=prior, Q=post)
-            self.free_energy = F[2]
-            self.PE.new(surprise=F[3], P=prior, Q=post)
+            self.free_energy = F[0]
+            self.PE.new(surprise=F[2], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.td_posterior, self.hypotheses.dpd, hl_k)
@@ -269,6 +269,7 @@ class Layer(object):
         # fixate the intention dependent kalman gain
         self.set_intention_dependent_kalman_gain()
         # self.set_variable_kalman_gain()
+        # self.K = kalman_gain(self.free_energy, self.PE.precision)
     
         # self.log(1, "gain bias:", bias, "resulting K:", self.K)
         # gain_gain is how strong the bias is enforced
@@ -349,6 +350,8 @@ class Layer(object):
             # elif self.name in ["Goals", "MC", "Vision"]:
             #     # decrease Kalman Gain for these layers
             #     self.K = 1 - gain_bias # 0.1
+            if self.name == "Vision":
+                self.K = 1.0
         elif self.intention is not None:
             # during PRODUCTION
 

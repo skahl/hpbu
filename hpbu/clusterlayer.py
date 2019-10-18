@@ -281,6 +281,7 @@ class ClusterLayer(Layer):
         # wipe and add cluster hypotheses and members
         self.hypotheses.reps = {}
         self.hypotheses.dpd = []
+        self.hypotheses.id_counter = 0
         for idx, members in idx_cluster.items():
             new_cluster = self.hypotheses.add_hypothesis(Cluster, P=0.1)
             new_cluster['seqs'] = members
@@ -415,7 +416,7 @@ class ClusterLayer(Layer):
         self.var_inter_cluster_sim = var_cluster_fe
 
         # self.log(3, "inter-cluster distances:", cluster_distances)
-        self.log(0, "average inter-cluster fe:", average_cluster_fe, "variance:", var_cluster_fe)
+        self.log(0, "average inter-cluster similarity:", average_cluster_fe, "variance:", var_cluster_fe)
 
         return cluster_similarities
 

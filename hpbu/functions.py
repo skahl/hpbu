@@ -37,15 +37,15 @@ from numpy.linalg import norm as np_norm
 from numpy import expand_dims as np_expand_dims, atleast_1d as np_atleast_1d, dot as np_dot, sqrt as np_sqrt
 from numpy import log as np_log, sum as np_sum, e as np_e, pi as np_pi, exp as np_exp, median as np_median
 from numpy import abs as np_abs, mean as np_mean, var as np_var, max as np_max, clip as np_clip, argmax as np_argmax
-from numpy import argmin as np_argmin
+from numpy import argmin as np_argmin, cos as np_cos
 from scipy.stats import entropy as np_entropy
 
 # riemann distance
 # from pyriemann.estimation import Covariances
 # from pyriemann.utils.distance import distance_riemann
 # dtw
-# from fastdtw import fastdtw, dtw
-# from scipy.spatial import distance
+from fastdtw import fastdtw, dtw
+from scipy.spatial.distance import cosine
 
 from copy import copy, deepcopy
 from time import time, sleep  # not needed in here, but in other modules
@@ -509,34 +509,62 @@ def extend_sequence(sequence, item):
     return sequence
 
 # @profile
+def my_dist(a, b):
+    if a[2] == b[2]:
+        return 10 - 10 * np_cos(a[0] - b[0]) + np_log(np_abs(a[1]-b[1])+1)
+    else:
+        return 10
+
+def coord_dist(a, b):
+    if a[2] == b[2]:
+        return np_sqrt(np_dot(a[0:1], b[0:1]))
+    else:
+        return 1
+
+
 def diff_sequences(seq_a, seq_b):
-    """ Calculate the Levenshtein distance and clip the gaussian likelihood of the result.
-    By that a similarity measure is returned.
-    """
-    source = seq_a.seq
-    target = seq_b.seq[:len(source)]  # compare only parts of equal size
 
-    s_range = range(len(source) + 1)
-    t_range = range(len(target) + 1)
-    matrix = np.array([[(i if j == 0 else j) for j in t_range] for i in s_range])
-    for i in s_range[1:]:
-        for j in t_range[1:]:
-            del_dist = matrix[i - 1, j] + 1  # delete distance
-            ins_dist = matrix[i, j - 1] + 1  # insertion distance
+    source = [[polar.theta, polar.r, polar.drawing] for polar in seq_a.seq]
+    # print("source", source)
 
-            # TODO: substitute for actual motor primitive __sub__ function
-            dist = np_abs(target[j - 1].theta - source[i - 1].theta)
-            sub_trans_cost = dist if dist < 0.5 and target[j - 1].drawing == source[i - 1].drawing else 1
-            sub_dist = matrix[i - 1, j - 1] + sub_trans_cost  # substitution distance
+    target = [[polar.theta, polar.r, polar.drawing] for polar in seq_b.seq]
+    # print("target", target)
 
-            # Choose option that produces smallest distance
-            matrix[i, j] = min(del_dist, ins_dist, sub_dist)
+    distance, _ = dtw(source, target, dist=my_dist)
 
-    _dist = matrix[len(source), len(target)]
-    # print(_dist)
-    _gauss = gaussian(_dist, 0., 24)
+    _gauss = gaussian(distance, 0., 40)
+    # print("distance", distance, "\tsimilarity", _gauss)
 
     return np_clip(_gauss, 0.0001, 1.)
+
+
+# def diff_sequences(seq_a, seq_b):
+#     """ Calculate the Levenshtein distance and clip the gaussian likelihood of the result.
+#     By that a similarity measure is returned.
+#     """
+#     source = seq_a.seq
+#     target = seq_b.seq[:len(source)]  # compare only parts of equal size
+
+#     s_range = range(len(source) + 1)
+#     t_range = range(len(target) + 1)
+#     matrix = np.array([[(i if j == 0 else j) for j in t_range] for i in s_range])
+#     for i in s_range[1:]:
+#         for j in t_range[1:]:
+#             del_dist = matrix[i - 1, j] + 1  # delete distance
+#             ins_dist = matrix[i, j - 1] + 1  # insertion distance
+
+#             dist = np_abs(target[j - 1] - source[i - 1])
+#             sub_trans_cost = dist if dist < 0.5 and target[j - 1].drawing == source[i - 1].drawing else 1
+#             sub_dist = matrix[i - 1, j - 1] + sub_trans_cost  # substitution distance
+
+#             # Choose option that produces smallest distance
+#             matrix[i, j] = min(del_dist, ins_dist, sub_dist)
+
+#     _dist = matrix[len(source), len(target)]
+#     # print(_dist)
+#     _gauss = gaussian(_dist, 0., 24)
+
+#     return np_clip(_gauss, 0.0001, 1.)
 
 
 def diff_levenshtein(source, target):
@@ -717,7 +745,7 @@ def inter_cluster_similarity_statistics(cluster_a, cluster_b):
     similarities = np.ones((lenrep_a, lenrep_b, 3))
     for j in range(lenrep_a):
         for k in range(lenrep_b):  # sadly have to compare all of them
-            # calculate free-energy between sequences
+            # calculate similarity between sequences
             sim = diff_sequences(seqs_a[j], seqs_b[k])
             similarities[j, k, :] = [seqs_a[j].id, seqs_b[k].id, sim]
 
