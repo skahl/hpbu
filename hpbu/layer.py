@@ -167,7 +167,7 @@ class Layer(object):
                     F = free_energy(P=prior, Q=post)
                     # print("intention:", self.intention, "post:", post.shape, "prior:", prior.shape)
                     self.free_energy = F[0]
-                    self.PE.new(surprise=F[2], P=prior, Q=post)
+                    self.PE.new(surprise=F[3], P=prior, Q=post)
                     # self.log(3, "max for driving signal:", max_p, "posterior:", max_q)
                     self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
@@ -223,7 +223,7 @@ class Layer(object):
             # calculate free energy
             F = free_energy(P=prior, Q=post)
             self.free_energy = F[0]
-            self.PE.new(surprise=F[2], P=prior, Q=post)
+            self.PE.new(surprise=F[3], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.hypotheses.dpd, self.bu_posterior, self.K)
@@ -253,7 +253,7 @@ class Layer(object):
             # calculate free energy
             F = free_energy(P=prior, Q=post)
             self.free_energy = F[0]
-            self.PE.new(surprise=F[2], P=prior, Q=post)
+            self.PE.new(surprise=F[3], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.td_posterior, self.hypotheses.dpd, hl_k)
