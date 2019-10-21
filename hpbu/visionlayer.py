@@ -114,7 +114,7 @@ class VisionLayer(SequenceLayer):
 
                 # estimate if that last movement was actually drawn (very low cost version)
                 phi_jump = np_abs(phi[1])
-                if phi_jump > 70:
+                if phi_jump > 50:
                     self.isDrawing = False
                     self.log(3, "Possible undrawn jump!", phi_jump)
 

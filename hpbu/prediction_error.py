@@ -28,7 +28,7 @@ class PredictionError(object):
         self.PE = 0.  # current prediction-error
         self.mean_PE = 0.  # current mean prediction-error
         self.var_PE = 0.  # current variance over prediction-errors
-        self.transient_PE = deque(maxlen=30)
+        self.transient_PE = deque(maxlen=10)
 
         self.threshold = 0.
         self.precision = 1.

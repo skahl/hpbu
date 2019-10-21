@@ -511,15 +511,14 @@ def extend_sequence(sequence, item):
 # @profile
 def my_dist(a, b):
     if a[2] == b[2]:
-        return 10 - 10 * np_cos(a[0] - b[0]) + np_log(np_abs(a[1]-b[1])+1)
-    else:
-        return 10
+        a_t = (a[0] + np_pi) / 2
+        b_t = (b[0] + np_pi) / 2
+        # print("theta:", (1 - np_cos(np_abs(a_t - b_t))))
+        # print("r:", np_log(np_abs(a[1] - b[1]) + 1) / 6)
 
-def coord_dist(a, b):
-    if a[2] == b[2]:
-        return np_sqrt(np_dot(a[0:1], b[0:1]))
+        return 10 * ((1 - np_cos(np_abs(a_t - b_t))) + np_log(np_abs(a[1] - b[1]) + 1) / 5)
     else:
-        return 1
+        return 15
 
 
 def diff_sequences(seq_a, seq_b):
