@@ -207,7 +207,7 @@ class SequenceLayer(Layer):
             # P(S_C, C) = sum_j( P(S_i|C_j) P(C_j) )
             self.td_posterior = mixture_experts(self.hypotheses.dpd, P_C, matrix, smooth=True)
 
-            self.log(4, "updated top-down posterior from higher layer:\n", self.td_posterior)
+            # self.log(0, "updated top-down posterior from higher layer:\n", self.td_posterior)
 
 
 
@@ -246,6 +246,7 @@ class SequenceLayer(Layer):
 
                 # calculate bottom-up posterior
                 self.bu_posterior = posterior(self.hypotheses.dpd, copy(self.likelihood), smooth=True)
+                # self.log(0, "current P_bu:\n", self.bu_posterior)
                 # print("seq bu-posterior:\n", self.bu_posterior)
 
 

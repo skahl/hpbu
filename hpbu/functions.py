@@ -596,8 +596,9 @@ def mixture_experts(S, C, matrix, smooth=True):
     """ From a mixture of experts C calculate the S probabilities.
     """
     post = copy(S)
+    # S[:, 0] = 1/len(S)
 
-    post[:, 0] = np.array([np_sum([s_P * c_P * len(matrix[c_id]) for c_P, c_id in C if s_id in matrix[c_id]]) for s_P, s_id in S[:]])
+    post[:, 0] = np.array([np_sum([s_P * c_P / len(matrix[c_id]) for c_P, c_id in C if s_id in matrix[c_id]]) for s_P, s_id in S[:]])
     post = norm_dist(post, smooth=smooth)
     # sum_bu = np_sum(post[:, 0])
     # if sum_bu > 1.1 or sum_bu < 0.9:
@@ -640,13 +641,13 @@ def soft_evidence(prior_dpd, evidence, LH_C, smooth=True):
         prior_dpd = np.zeros((len(LH_C), 2))
         prior_dpd[:, 1] = list(LH_C.keys())
         prior_dpd[:, 0] = 1/len(LH_C)
-        print("soft_evidence: prior_dpd was None")
+        # print("soft_evidence: prior_dpd was None")
 
     P_E = {s_id: P for P, s_id in evidence}
 
     posterior = copy(prior_dpd)
     
-    posterior[:, 0] = np.array([np_sum([P_E[s_id] for s_id in LH_C[c_id]]) * c_p for c_p, c_id in prior_dpd])
+    posterior[:, 0] = np.array([np_sum([P_E[s_id] for s_id in LH_C[c_id]]) / len(LH_C[c_id]) * c_p for c_p, c_id in prior_dpd])
     posterior = norm_dist(posterior, smooth=smooth)
     # print("posterior:\n", posterior)
 

@@ -118,7 +118,7 @@ class ClusterLayer(Layer):
                 self.last_surprise_time += self.lower_layer_evidence[1]
                 self.last_production_time += self.lower_layer_evidence[1]
 
-            # construct sparse LH matrix from part-of relationships with space for new sequence hypothesis
+            # construct sparse LH matrix from part-of relationships
             self.likelihood = self.layer_LH = defaultdict(list)
             for cl_id, rep in self.hypotheses.reps.items():
                 for seq in rep.seqs:
@@ -204,11 +204,14 @@ class ClusterLayer(Layer):
             # BE CAREFUL: this is where things break!
 
             # properly calculate new P'(C)
-            self.bu_posterior = soft_evidence(self.hypotheses.dpd, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
+            # with no prior! (self.hypotheses.dpd)
+            self.bu_posterior = soft_evidence(None, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
             # self.bu_posterior = norm_dist(self.bu_posterior, smooth=True)
             # self.log(1, "posterior sum:", np_sum(self.bu_posterior[:, 0]))
 
             self.log(4, "bu_update:", self.bu_posterior)
+            # self.log(3, "LH_Matrix:\n", self.likelihood)
+            # self.log(3, "Current P_bu:\n", self.bu_posterior)
 
 
 
