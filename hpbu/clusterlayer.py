@@ -204,8 +204,8 @@ class ClusterLayer(Layer):
             # BE CAREFUL: this is where things break!
 
             # properly calculate new P'(C)
-            # with no prior! (self.hypotheses.dpd)
-            self.bu_posterior = soft_evidence(None, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
+            # None triggers an equally distributed prior instead of self.hypotheses.dpd
+            self.bu_posterior = soft_evidence(self.hypotheses.dpd, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
             # self.bu_posterior = norm_dist(self.bu_posterior, smooth=True)
             # self.log(1, "posterior sum:", np_sum(self.bu_posterior[:, 0]))
 
