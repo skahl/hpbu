@@ -209,7 +209,7 @@ def norm_dist(distribution, smooth=True):
     """
 
     if smooth:
-        add_one_smoothing = 0.001  # 1. / distribution.shape[0]
+        add_one_smoothing = 0.0001 # 1. / distribution.shape[0]
         norming_factor = np_sum(distribution[:, 0] + add_one_smoothing)   # * distribution.shape[0])
         distribution[:, 0] = (distribution[:, 0] + add_one_smoothing) / norming_factor
     else:
@@ -608,10 +608,15 @@ def mixture_experts(S, C, matrix, smooth=True):
     return post
 
 
-def soft_evidence(prior_dpd, evidence, LH_C, smooth=True):
+def soft_evidence(prior_dpd, last_evidence, evidence, LH_C, smooth=True):
     """ Calculate soft evidence (new posterior) for prior, using the 'all things considered' method.
     
     See: Darwiche "Modeling and Reasoning with Bayes" - Chapter 3.6
+    P'(alpha) = sum_i(q_i*P(alpha|beta_i))
+
+    beta = original cluster element beliefs 
+    q = new observations of cluster elements
+    alpha = cluster beliefs
 
     Requires updated P(C|S) likelihood matrix from cluster layer.
     """
@@ -643,11 +648,16 @@ def soft_evidence(prior_dpd, evidence, LH_C, smooth=True):
         prior_dpd[:, 0] = 1/len(LH_C)
         # print("soft_evidence: prior_dpd was None")
 
-    P_E = {s_id: P for P, s_id in evidence}
+    if last_evidence is None:
+        last_evidence = np.zeros((evidence.shape[0], 2))
+        last_evidence[:, 0] = 1/evidence.shape[0]
+        last_evidence[:, 1] = evidence[:, 1]
+    q = {s_id: P for P, s_id in last_evidence}
+    beta = {s_id: P for P, s_id in evidence}
 
     posterior = copy(prior_dpd)
-    
-    posterior[:, 0] = np.array([np_sum([P_E[s_id] for s_id in LH_C[c_id]]) / len(LH_C[c_id]) * c_p for c_p, c_id in prior_dpd])
+    # divide by cluster size necessary due to unequal cluster sizes... (this would not be part of Darwiche's soft evidence method)  / len(LH_C[c_id])
+    posterior[:, 0] = np.array([np_sum([beta[s_id] * q[s_id] / c_p for s_id in LH_C[c_id]]) / len(LH_C[c_id]) for c_p, c_id in prior_dpd])
     posterior = norm_dist(posterior, smooth=smooth)
     # print("posterior:\n", posterior)
 

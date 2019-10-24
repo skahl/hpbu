@@ -66,7 +66,7 @@ class Hierarchy(object):
         self.personmodel = None
 
         self.time_step = self.config.parameters['time_step']  # seconds
-        self.update_info_delay = 0.001  # seconds TODO: decrease!!
+        self.update_info_delay = 0.1  # seconds TODO: decrease!!
         self.time_since_update = 0
         self.last_time_info = time()
         # TODO: make use of self.config.parameters['memory_len']  # currently defaulting to 5 everywhere

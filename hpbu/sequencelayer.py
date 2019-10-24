@@ -148,7 +148,7 @@ class SequenceLayer(Layer):
                 lh, best_hypo, best_idx = self.update_sequences(self.hypotheses.reps, self.tmp_seq)
                 # save as likelihood P(V|S)
                 self.likelihood = lh
-                self.log(3, "Best fitting sequence [lh id]:", self.likelihood[best_idx])
+                self.log(3, "Best fitting sequences [lh id]:", best_hypo)
 
             # check for production evidence
             if self.production_candidate is not None and\
@@ -177,7 +177,7 @@ class SequenceLayer(Layer):
                 lrp_idx = self.hypotheses.reps[lrp].dpd_idx
 
                 # create motor intention
-                # self.hypotheses.equalize()
+                self.hypotheses.equalize()
                 avg_P = np_mean(self.hypotheses.dpd[:, 0])
                 var_P = 0.2
                 critical_intention = avg_P + var_P  # only +1 var
@@ -218,8 +218,11 @@ class SequenceLayer(Layer):
         # careful, updating likelihood distribution here!
         # TODO: calculate time precision with regard to predicted observation or for all next elements' timing?
         # gain = 0.85  # scales 0.5 likelihood at 0.2 seconds and 0.05 likelihood at 0.5 seconds
-        gain = 0.96  # scales 0.5 likelihood at 0.115 seconds (was used for skahl & skopp (2018) simulations)
+        # gain = 0.96  # scales 0.5 likelihood at 0.115 seconds (was used for skahl & skopp (2018) simulations)
         # gain = 0.997  # scales 0.5 likelihood at 0.005 seconds
+        gain = 0.9
+
+        # local_K = self.K = kalman_gain(self.free_energy, self.PE.precision)
 
         if len(self.tmp_delay) > 0 and self.tmp_delay[-1] > 0.:
             if self.lower_layer_new_hypo is not None:  # or self.lower_layer_evidence is not None:
@@ -228,26 +231,32 @@ class SequenceLayer(Layer):
                 if self.intention is not None:
                     t_prec = time_precision(self.production_delta_t, self.tmp_delay[-1], gain)
                     self.likelihood[:, 0] *= t_prec
-                    self.log(2, "time precision:", t_prec, "predicted delta_t:", self.production_delta_t, "received delta_t:", self.tmp_delay[-1])
+                    self.log(1, "time precision:", t_prec, "predicted delta_t:", self.production_delta_t, "received delta_t:", self.tmp_delay[-1])
 
                     intent_idx = self.hypotheses.reps[self.intention].dpd_idx
-                    intent_lh = self.likelihood[intent_idx]
-                    max_idx = np_argmax(self.likelihood[:, 0])
-                    max_id = self.likelihood[max_idx]
+                    norm_LH = norm_dist(self.likelihood)
+                    intent_lh = norm_LH[intent_idx]
+                    max_idx = np_argmax(norm_LH[:, 0])
+                    max_id = norm_LH[max_idx]
 
-                    # A filtered signal gives nice plots, but may be unnecessary for evaluating self-other distinction
-                    self.self_estimate, _ = kalman_filter(self.self_estimate, intent_lh[0], self.K)
-                    self.log(2, "Likelihood statistics (intent hypo / max hypo):", intent_lh, '/', max_id)
-                else:
+                    if self.intention == max_id[1]:
+                        # A filtered signal gives nice plots, but may be unnecessary for evaluating self-other distinction
+                        self.self_estimate, _ = kalman_filter(self.self_estimate, t_prec, self.K)
+                    else:
+                        # A filtered signal gives nice plots, but may be unnecessary for evaluating self-other distinction
+                        self.self_estimate, _ = kalman_filter(self.self_estimate, intent_lh[0], self.K)
+                    self.log(1, "Likelihood statistics (intent hypo / max hypo):", intent_lh, '/', max_id, "K:", self.K)
+                elif len(self.tmp_delay) > 2: # need a minimum of two observations before a new judgement
                     self.self_estimate, _ = kalman_filter(self.self_estimate, 0., self.K)
 
+                # store self estimate for last action
                 if self.personmodel is not None:
                     self.personmodel.self_estimate = self.self_estimate
-
-                # calculate bottom-up posterior
-                self.bu_posterior = posterior(self.hypotheses.dpd, copy(self.likelihood), smooth=True)
-                # self.log(0, "current P_bu:\n", self.bu_posterior)
-                # print("seq bu-posterior:\n", self.bu_posterior)
+                    
+        # calculate bottom-up posterior
+        self.bu_posterior = posterior(self.hypotheses.dpd, copy(self.likelihood), smooth=True)
+        # self.log(0, "current P_bu:\n", self.bu_posterior)
+        # print("seq bu-posterior:\n", self.bu_posterior)
 
 
 
@@ -361,7 +370,7 @@ class SequenceLayer(Layer):
                 # self.layer_long_range_projection["Realizations"] = {"surprise": "Seq"}
                 self.layer_long_range_projection["Vision"] = {"done": "Seq"}
 
-            elif self.intention_hypo is not None and len(self.prod_seq) >= len(self.intention_hypo["seq"]): # and cur_delay > average_delay:
+            elif self.intention_hypo is not None and len(self.prod_seq) >= len(self.intention_hypo["seq"]) and cur_delay > average_delay:
                 # no next step possible and no surprisal
                 # should not be possible, so mention it
                 self.log(1, "No known next steps in current intended motor belief", self.intention_hypo['id'])

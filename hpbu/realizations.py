@@ -65,7 +65,6 @@ class Realizations(SequenceLayer):
 
 
     def print_out(self):
-
         _str_ = self.name
         _str_ += "\nMentalStates:\n"
         _str_ += str(self.current_mentalstates)
@@ -101,13 +100,42 @@ class Realizations(SequenceLayer):
             if self.intention_prediction is None:
                 self.intention_prediction = {"idx": 0, "realization": None}
 
-            if self.lower_layer_evidence is not None and self.lower_layer_evidence[0] is not None:
+            if self.lower_layer_evidence is not None and self.lower_layer_evidence[0] is not None and self.surprise_received:
+                # self.surprise_received
+
                 self.last_lower_layer_evidence = copy(self.lower_layer_evidence)  # copy for later use
                 self.lower_layer_hypos = self.last_lower_layer_evidence[0]
                 max_hypo_P, max_hypo = self.lower_layer_hypos.max()  # tuple of (P, id)
 
                 self.time_since_evidence += self.last_lower_layer_evidence[1]
                 self_estimate = self.last_lower_layer_evidence[3]
+
+                # TODO: check if it is possible that the perceived max lh is similar to intention
+                # compare perceived you belief to all cluster prototypes:
+                # mean_P = np_mean(self.lower_layer_hypos.dpd[:, 0])
+                # self.lower_layer_hypos.dpd[cluster.dpd_idx, 0] > mean_P and
+
+                if self.current_mentalstate.me != []:
+                    # TODO: if clusters don't change this could be calculated once in a lookup table
+                    # check what other clusters could be expected, given the current me belief as the communication goal
+                    me_cluster = self.current_mentalstate.me[0]
+                    if me_cluster != max_hypo:
+                        # get the top 20% of likely clusters
+                        ar_likely_clusters = np.array(self.lower_layer_hypos.dpd)
+                        nth_part = int(ar_likely_clusters.shape[0] * 0.2)+1
+                        sorted_likely_clusters = ar_likely_clusters[ar_likely_clusters[:, 0].argsort()]
+                        top_percent_clusters = sorted_likely_clusters[ar_likely_clusters.shape[0] - nth_part:]
+                        self.log(3, "index of the percentile split:", nth_part)
+
+                        self.log(1, "Top 20 percent of other likely clusters:", top_percent_clusters)
+                        if me_cluster in top_percent_clusters[:, 1]:
+                            self.log(1, "Perceived cluster is closely similar to intended cluster! Assuming similarity between:", me_cluster, max_hypo)
+                            max_hypo = me_cluster
+                            max_hypo_P = self.lower_layer_hypos.dpd[self.lower_layer_hypos.reps[me_cluster].dpd_idx, 0]
+                        else:
+                            self.log(1, "Perceived cluster is not similar enough to intended cluster!")
+                        # self.log(0, self.lower_layer_hypos.dpd)
+
 
                 # print("received self_estimate:", self_estimate)#
                 self.log(1, "max hypo:", max_hypo, max_hypo_P)
@@ -128,7 +156,7 @@ class Realizations(SequenceLayer):
 
                     # ! ! ! there is a bias towards self-hood, so to make sure bias is 0.1
                     # you:
-                    if self_estimate < 0.3:
+                    if self_estimate < 0.4:
                         # update current mentalstate
                         self.current_mentalstate.you = [max_hypo]
                     # me:
@@ -157,7 +185,7 @@ class Realizations(SequenceLayer):
 
                     # ! ! ! there is a bias towards other-hood, so to make sure bias is 0.1
                     # you:
-                    if self_estimate < 0.5:
+                    if self_estimate < 0.4:
                         # update current mentalstate
                         self.current_mentalstate.you = [max_hypo]
                     # me:
@@ -179,6 +207,8 @@ class Realizations(SequenceLayer):
                     self.surprise_received = False
                     # reset intention, as action was perceived or thumbsup done
                     self.intention = None
+
+                self.surprise_received = False
 
             # check for just received meta-communicative signals 
             if self.personmodel.me_focus is not None:
@@ -476,6 +506,7 @@ class Realizations(SequenceLayer):
 
                         elif Intention("_wait", False) == next_intention_variable:
                             # configure this level to wait for a stable lower level hypothesis
+                            self.log(1, "Now waiting for a stable percept...")
                             self.should_wait = True
                             self.intention = next_intention_variable
 
@@ -495,6 +526,10 @@ class Realizations(SequenceLayer):
                             # print("next intention id:", next_intention_id)
                             if next_intention_id is not None:
                                 # make a prediction for the complete lower level distribution
+                                
+                                # clear distracting influences
+                                self.lower_layer_hypos.equalize()
+                                
                                 avg_P = np_mean(self.hypotheses.dpd[:, 0])
                                 var_P = 0.2
                                 critical_intention = avg_P + var_P  # only +1 var

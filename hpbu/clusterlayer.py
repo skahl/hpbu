@@ -46,6 +46,7 @@ class ClusterLayer(Layer):
         super(ClusterLayer, self).reset()
         # cluster layer likelihood P(C|S)
         self.layer_LH = None
+        self.last_lower_layer_evidence = None
 
         self.seq_intention = None  # in case of very specific selection of sequence production
 
@@ -147,8 +148,10 @@ class ClusterLayer(Layer):
                 # get idx of intended hypothesis:
                 lrp_idx = self.hypotheses.reps[lrp].dpd_idx
 
-                # create motor intention
-                # self.hypotheses.equalize()
+                # create motor intention and clear interfering influences
+                self.lower_layer_evidence[0].equalize()
+                self.last_lower_layer_evidence = None
+                self.hypotheses.equalize()
                 avg_P = np_mean(self.hypotheses.dpd[:, 0])
                 var_P = 0.2
                 critical_intention = avg_P + var_P  # only +1 var
@@ -205,7 +208,8 @@ class ClusterLayer(Layer):
 
             # properly calculate new P'(C)
             # None triggers an equally distributed prior instead of self.hypotheses.dpd
-            self.bu_posterior = soft_evidence(self.hypotheses.dpd, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
+            self.bu_posterior = soft_evidence(None, self.last_lower_layer_evidence, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
+            self.last_lower_layer_evidence = copy(self.lower_layer_evidence[0].dpd)
             # self.bu_posterior = norm_dist(self.bu_posterior, smooth=True)
             # self.log(1, "posterior sum:", np_sum(self.bu_posterior[:, 0]))
 
@@ -234,23 +238,24 @@ class ClusterLayer(Layer):
             self.collect_in_cluster(hypo, self.lower_layer_new_hypo)
 
         # decide on updates to communicate for higher level layer
-        # decision should be based on stability of hypothesis, not surprise
-        # TODO: does this work to just look for a surprising PE?
-        if not self.PE.some_surprise() and len(self.hypotheses.reps) > 0:
-            # update best hypothesis if there is enough stability in current hypothesis space
-            self.best_hypo = self.hypotheses.reps[self.hypotheses.max()[1]]
-            self.log(4, "new best hypo:", self.best_hypo.id)
+        # decision should be based on stability of hypothesis, not surprise (so NO surprise!)
+        # if not self.PE.some_surprise() and len(self.hypotheses.reps) > 0:
+        # update best hypothesis if there is enough stability in current hypothesis space
+        self.best_hypo = self.hypotheses.reps[self.hypotheses.max()[1]]
+        self.log(4, "new best hypo:", self.best_hypo.id)
 
-            # stable hypothesis: current free energy is smaller than average, including variance margin
-            # if surprise in the hierarchy, inform!
-            if self.surprise_received:
-                self.layer_evidence = [self.hypotheses,
-                                       copy(self.last_surprise_time),
-                                       self.PE,
-                                       self.self_estimate,
-                                       self.intention]
-                self.last_surprise_time = 0.
-                self.surprise_received = False  # reset signal
+        # stable hypothesis: current free energy is smaller than average, including variance margin
+        # if surprise in the hierarchy, inform!
+        if self.surprise_received:
+            self.layer_evidence = [self.hypotheses,
+                                    copy(self.last_surprise_time),
+                                    self.PE,
+                                    self.self_estimate,
+                                    self.intention]
+        self.last_surprise_time = 0.
+        self.surprise_received = False  # reset signal
+        # elif self.PE.some_surprise() and self.surprise_received:
+        #     self.log(1, "This is wrong. No stable percept, but surprise received in Seq level:", self.PE.PE, self.PE.transient_PE)
             
 
 
@@ -346,15 +351,19 @@ class ClusterLayer(Layer):
                         best_lower_level_hypo = self.lower_layer_evidence[0].reps[self.lower_layer_evidence[0].max()[1]]
                         print("is", best_lower_level_hypo.id, "in", self.layer_LH[self.signaling_distractor], "?")
                         if best_lower_level_hypo.id in self.layer_LH[self.signaling_distractor]:
+                            # contrasting from exact sequence
                             contrastor = best_lower_level_hypo
                         else:
+                            # contrasting from cluster prototype
                             self.log(1, "best Seq hypo:", best_lower_level_hypo, "is not in signaling distractor class:", self.signaling_distractor)
                             contrastor = self.hypotheses.reps[self.signaling_distractor]['prototype']
                         # find a signaling candidate from a cluster that is most different than a contrastor_candidate
                         candidate = find_signaling_candidate(cluster=self.hypotheses.reps[self.intention], contrastor_candidate=contrastor)
                         
-                        # reinforce motor intention
-                        # self.hypotheses.equalize()
+                        # reinforce intention by clearing other possible influences
+                        self.hypotheses.equalize()
+                        self.last_lower_layer_evidence = None
+
                         avg_P = np_mean(self.hypotheses.dpd[:, 0])
                         var_P = 0.2
                         critical_intention = avg_P + var_P  # only +1 var
@@ -372,7 +381,7 @@ class ClusterLayer(Layer):
                             candidate = self.hypotheses.reps[self.intention]['prototype']
                             self.production_candidate = candidate['id']
 
-                            # self.hypotheses.equalize()
+                            self.hypotheses.equalize()
                             avg_P = np_mean(self.hypotheses.dpd[:, 0])
                             var_P = 0.2
                             critical_intention = avg_P + var_P  # only +1 var

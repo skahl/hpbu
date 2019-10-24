@@ -61,7 +61,6 @@ class Goals(ClusterLayer):
 
 
     def print_out(self):
-
         _str_ = self.name
         _str_ += "\nhypotheses ("
         _str_ += str(len(self.hypotheses))
