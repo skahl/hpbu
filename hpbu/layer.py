@@ -137,6 +137,13 @@ class Layer(object):
         # incorporate new evidence
         self.integrate_evidence()
 
+        # decay probability over time
+        # if len(self.hypotheses.reps) > 0:
+        #     self.hypotheses.dpd[:, 0] *= 0.01
+        #     self.hypotheses.dpd = norm_dist(self.hypotheses.dpd)
+        #     # self.log(0, "probability decay... var:", np.var(self.hypotheses.dpd[:, 0]))
+
+
         if self.higher_layer_prediction is not None \
                 or self.long_range_projection is not None:
             # incorporate higher layer and long distance projections
@@ -223,7 +230,7 @@ class Layer(object):
             # calculate free energy
             F = free_energy(P=prior, Q=post)
             self.free_energy = F[0]
-            self.PE.new(surprise=F[3], P=prior, Q=post)
+            self.PE.new(surprise=F[0], P=prior, Q=post)
             self.log(4, "free energy:", self.free_energy, "surprise:", F[1], "cross-entropy:", F[2])
 
             self.hypotheses.dpd = inhibition_belief_update(self.hypotheses.dpd, self.bu_posterior, self.K)
@@ -342,7 +349,7 @@ class Layer(object):
 
         if self.intention is None:
             # during PERCEPTION
-            self.K = kalman_gain(self.free_energy, self.PE.precision, 1 - gain_bias)
+            self.K = kalman_gain(self.free_energy, self.PE.precision, gain_bias, gain_gain=0.5)
 
             # if self.name in ["Realizations", "Schm", "Seq"]:
             #     # increase Kalman Gain to make these layer susceptible to evidence
@@ -355,7 +362,7 @@ class Layer(object):
         elif self.intention is not None:
             # during PRODUCTION
 
-            self.K = kalman_gain(self.free_energy, self.PE.precision, gain_bias)
+            self.K = kalman_gain(self.free_energy, self.PE.precision, gain_bias, gain_gain=0.5)
 
             # if self.name in ["Goals", "Schm", "Seq"]:
             #     # decrease Kalman Gain for these layers to be less susceptible to evidence

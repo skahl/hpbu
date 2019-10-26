@@ -148,7 +148,7 @@ class SequenceLayer(Layer):
                 lh, best_hypo, best_idx = self.update_sequences(self.hypotheses.reps, self.tmp_seq)
                 # save as likelihood P(V|S)
                 self.likelihood = lh
-                self.log(3, "Best fitting sequences [lh id]:", best_hypo)
+                self.log(2, "Best fitting sequences [lh id]:", best_hypo)
 
             # check for production evidence
             if self.production_candidate is not None and\
@@ -189,6 +189,16 @@ class SequenceLayer(Layer):
                 self.intention = lrp
                 # reset production candidate
                 self.production_candidate = None
+
+            if "observe" in self.long_range_projection:
+                self.hypotheses.equalize()
+                self.production_candidate = None
+                self.tmp_seq = []
+                self.tmp_delay = []
+                self.lower_layer_evidence = None
+                self.lower_layer_new_hypo = None
+                self.log(1, "setting level to reset residual observation influences")
+
 
             if "done" in self.long_range_projection:
                 self.tmp_seq = []
@@ -281,20 +291,23 @@ class SequenceLayer(Layer):
         for idx, seq in enumerate(sequences):
             # extend the new_seq sequence with the sequence that it will be compared to
             # the better fit will still win
-            s_shape = seq[0].seq.shape[0]
-            tmp_shape = _seq.seq.shape[0]
+            
+            # s_shape = seq[0].seq.shape[0]
+            # tmp_shape = _seq.seq.shape[0]
+
+            _diff_lh = diff_sequences(_seq, seq[0])
 
             # check if the size of the sequences are sufficient
-            if tmp_shape <= s_shape:
-                # weight diff with respect to the sequence length's fraction of the sequence compared to
-                # scale_to_len = tmp_shape / s_shape
+            # if tmp_shape <= s_shape:
+            #     # weight diff with respect to the sequence length's fraction of the sequence compared to
+            #     # scale_to_len = tmp_shape / s_shape
 
-                _diff_lh = diff_sequences(_seq, seq[0])  # * scale_to_len
+            #     _diff_lh = diff_sequences(_seq, seq[0])  # * scale_to_len
 
-            else:
-                # if probability distributions are too small, rate minimal comparability
-                # actually, this shouldn't happen
-                _diff_lh = 0.0001
+            # else:
+            #     # if probability distributions are too small, rate minimal comparability
+            #     # actually, this shouldn't happen
+            #     _diff_lh = 0.0001
 
             diffs_LH[idx, 0] = _diff_lh
 
@@ -322,7 +335,7 @@ class SequenceLayer(Layer):
                 # seems necessary for production self evidenced delay surprise
                 self.time_since_evidence += self.params['time_step']
                 cur_delay = self.tmp_delay[-1] + self.time_since_evidence
-                self.log(2, "current delay since last update:", cur_delay)
+                self.log(3, "current delay since last update:", cur_delay)
             else:
                 average_delay = 0. 
                 cur_delay = 0.

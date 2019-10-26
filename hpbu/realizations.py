@@ -115,7 +115,7 @@ class Realizations(SequenceLayer):
                 # mean_P = np_mean(self.lower_layer_hypos.dpd[:, 0])
                 # self.lower_layer_hypos.dpd[cluster.dpd_idx, 0] > mean_P and
 
-                if self.current_mentalstate.me != []:
+                if self.current_mentalstate is not None and self.current_mentalstate.me != []:
                     # TODO: if clusters don't change this could be calculated once in a lookup table
                     # check what other clusters could be expected, given the current me belief as the communication goal
                     me_cluster = self.current_mentalstate.me[0]
@@ -501,6 +501,21 @@ class Realizations(SequenceLayer):
                                 # implicitly we also wait for the return thumbsup
                                 self.should_wait = True
                                 self.intention = next_intention_variable
+
+                                # clear distracting influences and signal lower levels to just observe 
+                                # and possibly reset their influencing factors
+                                self.lower_layer_hypos.equalize()
+                                self.layer_prediction = self.lower_layer_hypos.dpd
+                                self.layer_long_range_projection = {
+                                                                        "Schm":
+                                                                        {
+                                                                            "observe": None
+                                                                        },
+                                                                        "Seq":
+                                                                        {
+                                                                            "observe": None
+                                                                        }
+                                                                    }
                             else:
                                 self.error("me_focus is not set! Cannot gaze at unknown agent!")
 
@@ -509,6 +524,21 @@ class Realizations(SequenceLayer):
                             self.log(1, "Now waiting for a stable percept...")
                             self.should_wait = True
                             self.intention = next_intention_variable
+
+                            # clear distracting influences and signal lower levels to just observe 
+                            # and possibly reset their influencing factors
+                            # self.lower_layer_hypos.equalize()
+                            self.layer_prediction = self.lower_layer_hypos.dpd
+                            # self.layer_long_range_projection = {
+                            #                                         "Schm":
+                            #                                         {
+                            #                                             "observe": None
+                            #                                         },
+                            #                                         "Seq":
+                            #                                         {
+                            #                                             "observe": None
+                            #                                         }
+                            #                                     }
 
                         elif self.lower_layer_hypos is not None and len(self.lower_layer_hypos) > 0:
                             if self.current_mentalstate.me != [] and\
@@ -529,7 +559,7 @@ class Realizations(SequenceLayer):
                                 
                                 # clear distracting influences
                                 self.lower_layer_hypos.equalize()
-                                
+
                                 avg_P = np_mean(self.hypotheses.dpd[:, 0])
                                 var_P = 0.2
                                 critical_intention = avg_P + var_P  # only +1 var

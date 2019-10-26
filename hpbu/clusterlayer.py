@@ -152,17 +152,23 @@ class ClusterLayer(Layer):
                 self.lower_layer_evidence[0].equalize()
                 self.last_lower_layer_evidence = None
                 self.hypotheses.equalize()
-                avg_P = np_mean(self.hypotheses.dpd[:, 0])
-                var_P = 0.2
-                critical_intention = avg_P + var_P  # only +1 var
-                self.log(1, "setting intention", lrp, "P at critical:", critical_intention)
+                
+                # avg_P = np_mean(self.hypotheses.dpd[:, 0])
+                # var_P = 0.2
+                # critical_intention = avg_P + var_P  # only +1 var
+                # self.log(1, "setting intention", lrp, "P at critical:", critical_intention)
 
-                # idx from rep id
-                self.td_posterior = dpd_equalize(self.hypotheses.dpd)
-                self.td_posterior = set_hypothesis_P(self.td_posterior, lrp_idx, critical_intention)
-                self.td_posterior = norm_dist(self.td_posterior, smooth=True)
+                # # idx from rep id
+                # self.td_posterior = dpd_equalize(self.hypotheses.dpd)
+                # self.td_posterior = set_hypothesis_P(self.td_posterior, lrp_idx, critical_intention)
+                # self.td_posterior = norm_dist(self.td_posterior, smooth=True)
                 self.intention = lrp
                 # print("projected id:", lrp, self.td_posterior[lrp_idx])
+
+            if "observe" in self.long_range_projection:
+                self.lower_layer_evidence[0].equalize()
+                self.last_lower_layer_evidence = None
+                self.hypotheses.equalize()
 
             if "signaling_distractor" in self.long_range_projection:
                 self.signaling_distractor = self.long_range_projection["signaling_distractor"]
@@ -183,18 +189,18 @@ class ClusterLayer(Layer):
                     self.surprise_received = True
                     self.seq_intention = None
 
-        # elif self.higher_layer_prediction is not None:
-        #     self.log(4, "higher layer projection:", self.higher_layer_prediction)
-        #     higher_layer = copy(self.higher_layer_prediction)
-        #     # P = higher_layer[0]
-        #     # matrix = higher_layer[1]
+        elif self.higher_layer_prediction is not None:
+            self.log(4, "higher layer projection:", self.higher_layer_prediction)
+            higher_layer = copy(self.higher_layer_prediction)
+            # P = higher_layer[0]
+            # matrix = higher_layer[1]
 
-        #     # self.td_posterior = higher_layer
-        #     # self.td_posterior = norm_dist(higher_layer)
-        #     # self.td_posterior = posterior(self.hypotheses.dpd, higher_layer, smooth=True)
-        #     self.td_posterior = joint(self.hypotheses.dpd, higher_layer, smooth=True)
+            # self.td_posterior = higher_layer
+            # self.td_posterior = norm_dist(higher_layer)
+            # self.td_posterior = posterior(self.hypotheses.dpd, higher_layer, smooth=True)
+            self.td_posterior = joint(self.hypotheses.dpd, higher_layer, smooth=True)
 
-        #     self.log(4, "updated top-down posterior from higher layer:\n", self.td_posterior)
+            self.log(4, "updated top-down posterior from higher layer:\n", self.td_posterior)
 
 
 
@@ -213,7 +219,7 @@ class ClusterLayer(Layer):
             # self.bu_posterior = norm_dist(self.bu_posterior, smooth=True)
             # self.log(1, "posterior sum:", np_sum(self.bu_posterior[:, 0]))
 
-            self.log(4, "bu_update:", self.bu_posterior)
+            self.log(2, "max bu_posterior:", self.bu_posterior[np_argmax(self.bu_posterior[:, 0])])
             # self.log(3, "LH_Matrix:\n", self.likelihood)
             # self.log(3, "Current P_bu:\n", self.bu_posterior)
 

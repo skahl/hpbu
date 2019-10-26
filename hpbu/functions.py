@@ -55,6 +55,9 @@ from collections import defaultdict, Counter
 
 import traceback
 
+global smoothing_parameter
+smoothing_parameter = 0.0001
+
 
 class Logger(object):
     doLogging = 0
@@ -108,12 +111,14 @@ class DataLogger(Logger):
 def joint(A, B, smooth=True):
     """ Joint probability: P(A, B) = P(Ai) + P(Bi) / sum(P(Ai) + P(Bi))
     """
+    global smoothing_parameter
+
     _A = A[A[:, 1].argsort()]
     _B = B[B[:, 1].argsort()]
     joint = copy(_B)
 
     if smooth:
-        add_one_smoothing = 0.005
+        add_one_smoothing = smoothing_parameter
         norming_factor = np_sum(_A[:, 0] + _B[:, 0] + add_one_smoothing)
         joint[:, 0] = (_A[:, 0] + _B[:, 0] + add_one_smoothing) / norming_factor
 
@@ -130,6 +135,8 @@ def joint(A, B, smooth=True):
 def posterior(prior, evidence, smooth=True):
         """ Calculate the posterior given the prior and the given dpd, normalized by a norming factor.
         """
+        global smoothing_parameter
+
         # P(H|A) = P(H)*P(A|H)/P(A)
         # P(A) = SUM_H(P(H,A)) = SUM_H(P(H)*P(A|H))
         if prior is not None and evidence is not None:
@@ -140,8 +147,8 @@ def posterior(prior, evidence, smooth=True):
             posterior = copy(prior)
             
             if smooth:
-                add_one_smoothing = 0.005  # 1. / posterior.shape[0]
-                norming_factor = np_sum(prior[:, 0] * evidence[:, 0] + add_one_smoothing)  # * posterior.shape[0]
+                add_one_smoothing = smoothing_parameter
+                norming_factor = np_sum(prior[:, 0] * evidence[:, 0] + add_one_smoothing) 
                 # calculate new posterior
                 posterior[:, 0] = (prior[:, 0] * evidence[:, 0] + add_one_smoothing) / norming_factor
             else:
@@ -207,10 +214,12 @@ def norm_dist(distribution, smooth=True):
     """ Normalize distribution, and apply add-one smoothing to leave
     unused probability space.
     """
+    global smoothing_parameter
 
     if smooth:
-        add_one_smoothing = 0.0001 # 1. / distribution.shape[0]
-        norming_factor = np_sum(distribution[:, 0] + add_one_smoothing)   # * distribution.shape[0])
+        add_one_smoothing = smoothing_parameter
+        norming_factor = np_sum(distribution[:, 0] + add_one_smoothing) 
+
         distribution[:, 0] = (distribution[:, 0] + add_one_smoothing) / norming_factor
     else:
         distribution[:, 0] = distribution[:, 0] / np_sum(distribution[:, 0])
@@ -345,6 +354,7 @@ def kalman_gain(F, pi, oldK=None, gain_gain=0.5):
 
     if oldK is not None:
         # filter the Kalman Gain over time using a "gain gain" ;)
+        # high gain_gain means stronger fluctuations from K
         K, _ = kalman_filter(oldK, K, gain_gain)
 
     return K
@@ -657,7 +667,7 @@ def soft_evidence(prior_dpd, last_evidence, evidence, LH_C, smooth=True):
 
     posterior = copy(prior_dpd)
     # divide by cluster size necessary due to unequal cluster sizes... (this would not be part of Darwiche's soft evidence method)  / len(LH_C[c_id])
-    posterior[:, 0] = np.array([np_sum([beta[s_id] * q[s_id] / c_p for s_id in LH_C[c_id]]) / len(LH_C[c_id]) for c_p, c_id in prior_dpd])
+    posterior[:, 0] = np.array([np_sum([beta[s_id] * q[s_id] / c_p for s_id in LH_C[c_id]]) for c_p, c_id in prior_dpd])
     posterior = norm_dist(posterior, smooth=smooth)
     # print("posterior:\n", posterior)
 

@@ -140,6 +140,25 @@ class Goals(ClusterLayer):
             self.log(4, "updated top-down posterior from higher layer:\n", self.td_posterior)
 
 
+    def bu_inference(self):
+        """ Calculate the new posterior for the cluster layer, based on evidence from
+        predicted sequences per cluster, calculating marginal P(S) using soft-evidence.
+        """
+        if self.layer_LH is not None:
+            # normalization is included in soft_evidence function. 
+            # BE CAREFUL: this is where things break!
+
+            # properly calculate new P'(C)
+            # None triggers an equally distributed prior instead of self.hypotheses.dpd
+            self.bu_posterior = soft_evidence(None, self.last_lower_layer_evidence, self.lower_layer_evidence[0].dpd, self.layer_LH, smooth=True)
+            self.last_lower_layer_evidence = copy(self.lower_layer_evidence[0].dpd)
+            # self.bu_posterior = norm_dist(self.bu_posterior, smooth=True)
+            # self.log(1, "posterior sum:", np_sum(self.bu_posterior[:, 0]))
+
+            self.log(2, "max bu_posterior:", self.bu_posterior[np_argmax(self.bu_posterior[:, 0])])
+            # self.log(3, "LH_Matrix:\n", self.likelihood)
+            # self.log(3, "Current P_bu:\n", self.bu_posterior)
+
 
     def extension(self):
         pass
