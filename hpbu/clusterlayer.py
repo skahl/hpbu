@@ -247,21 +247,22 @@ class ClusterLayer(Layer):
         # decision should be based on stability of hypothesis, not surprise (so NO surprise!)
         # if not self.PE.some_surprise() and len(self.hypotheses.reps) > 0:
         # update best hypothesis if there is enough stability in current hypothesis space
-        self.best_hypo = self.hypotheses.reps[self.hypotheses.max()[1]]
-        self.log(4, "new best hypo:", self.best_hypo.id)
+        if len(self.hypotheses.reps) > 0:
+            self.best_hypo = self.hypotheses.reps[self.hypotheses.max()[1]]
+            self.log(4, "new best hypo:", self.best_hypo.id)
 
-        # stable hypothesis: current free energy is smaller than average, including variance margin
-        # if surprise in the hierarchy, inform!
-        if self.surprise_received:
-            self.layer_evidence = [self.hypotheses,
-                                    copy(self.last_surprise_time),
-                                    self.PE,
-                                    self.self_estimate,
-                                    self.intention]
-        self.last_surprise_time = 0.
-        self.surprise_received = False  # reset signal
-        # elif self.PE.some_surprise() and self.surprise_received:
-        #     self.log(1, "This is wrong. No stable percept, but surprise received in Seq level:", self.PE.PE, self.PE.transient_PE)
+            # stable hypothesis: current free energy is smaller than average, including variance margin
+            # if surprise in the hierarchy, inform!
+            if self.surprise_received:
+                self.layer_evidence = [self.hypotheses,
+                                        copy(self.last_surprise_time),
+                                        self.PE,
+                                        self.self_estimate,
+                                        self.intention]
+            self.last_surprise_time = 0.
+            self.surprise_received = False  # reset signal
+            # elif self.PE.some_surprise() and self.surprise_received:
+            #     self.log(1, "This is wrong. No stable percept, but surprise received in Seq level:", self.PE.PE, self.PE.transient_PE)
             
 
 
@@ -270,7 +271,9 @@ class ClusterLayer(Layer):
         """ Recalculate clusters using Affinity Propagation.
         """
 
-        seqs = list(self.lower_layer_evidence[0].reps.values())
+        _seqs = list(self.lower_layer_evidence[0].reps.values())
+        seqs = [s.as_array() for s in _seqs]
+        
         lenseqs = len(seqs)
 
         # calculate the whole similarity matrix
@@ -290,7 +293,7 @@ class ClusterLayer(Layer):
         idx_cluster = defaultdict(list)
         # prep cluster dict
         for seq_idx, center_idx in enumerate(labels):
-            idx_cluster[center_idx].append(seqs[seq_idx])
+            idx_cluster[center_idx].append(_seqs[seq_idx])
 
         # wipe and add cluster hypotheses and members
         self.hypotheses.reps = {}
@@ -299,7 +302,7 @@ class ClusterLayer(Layer):
         for idx, members in idx_cluster.items():
             new_cluster = self.hypotheses.add_hypothesis(Cluster, P=0.1)
             new_cluster['seqs'] = members
-            new_cluster['prototype'] = seqs[idx]
+            new_cluster['prototype'] = _seqs[idx]
 
         # construct sparse LH matrix from part-of relationships with space for new sequence hypothesis
         self.layer_LH = defaultdict(list)

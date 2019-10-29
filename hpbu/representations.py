@@ -121,7 +121,7 @@ class Cluster(Representation):
         """ Use k-medoid approach for selecting the median sequence as prototype.
         """
 
-        self.similarity_matrix, self.avg_sim, self.var_sim = within_cluster_similarity_statistics(self.seqs)
+        self.similarity_matrix, self.avg_sim, self.var_sim = within_cluster_similarity_statistics(self)
 
         if self.prototype is None:
             # 1a) if new cluster, select sequence as prototype
@@ -135,6 +135,10 @@ class Cluster(Representation):
 
             # 3) select that sequence as new prototype
             self.prototype = self.seqs[min_idx]
+
+
+    def seqs_as_list(self):
+        return [s.as_array() for s in self.seqs]
 
 
 
@@ -181,6 +185,11 @@ class Sequence(Representation):
         self.delta_t_seq = D["delta_t_seq"] if D["delta_t_seq"] is not None else None
 
         return self
+
+
+    def as_array(self):
+        return np.array([[float(polar.theta), float(polar.r), float(polar.drawing)] for polar in self.seq])
+
 
 
 

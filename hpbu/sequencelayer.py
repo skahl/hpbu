@@ -284,18 +284,19 @@ class SequenceLayer(Layer):
         # create temporary sequence discretization
         _seq = Sequence()
         _seq['seq'] = new_seq
-
+        _seq_a = _seq.as_array()
         # try to accelerate processing here:
         # diffs_LH[:, 0] = [diff_sequences(_seq, seq_b[0]) for seq_b in sequences]
 
-        for idx, seq in enumerate(sequences):
+        for idx, seq_b in enumerate(sequences):
             # extend the new_seq sequence with the sequence that it will be compared to
             # the better fit will still win
             
             # s_shape = seq[0].seq.shape[0]
             # tmp_shape = _seq.seq.shape[0]
+            _seq_b = seq_b[0].as_array()
 
-            _diff_lh = diff_sequences(_seq, seq[0])
+            _diff_lh = diff_sequences(_seq_a, _seq_b)
 
             # check if the size of the sequences are sufficient
             # if tmp_shape <= s_shape:
@@ -507,8 +508,11 @@ class SequenceLayer(Layer):
 
             _seq = Sequence()
             _seq['seq'] = self.tmp_seq
+
+            _seq_tmp = _seq.as_array()
+            best_s_seq = best_s.as_array()
             # _seq['discretized'], _seq['alphabet'] = discretize_coords_sequence(_seq['seq'], d=self.params["word_length"])
-            last_fit = diff_sequences(_seq, best_s)
+            last_fit = diff_sequences(_seq_tmp, best_s_seq)
             # predefine extended sequences
             extended_seqs = []
             for v in self.lower_layer_hypos.dpd:
@@ -521,7 +525,7 @@ class SequenceLayer(Layer):
 
             # trying to accelerate comparisons
             # calculate difference with default length=1 and drawing=True for all movement angles v
-            MV_S = np.array([[diff_sequences(seq_a, best_s), v] for seq_a, v in extended_seqs])
+            MV_S = np.array([[diff_sequences(seq_a.as_array(), best_s_seq), v] for seq_a, v in extended_seqs])
             MV_S[:, 0] = MV_S[:, 0] / last_fit
             self.layer_prediction = norm_dist(MV_S, smooth=True)
 

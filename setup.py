@@ -17,6 +17,7 @@ setup(
         'scipy',
         'sklearn',
         'simplejson',
-        'fastdtw'
+        'fastdtw',
+        'numba'
     ],
 )

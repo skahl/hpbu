@@ -40,11 +40,13 @@ from numpy import abs as np_abs, mean as np_mean, var as np_var, max as np_max, 
 from numpy import argmin as np_argmin, cos as np_cos
 from scipy.stats import entropy as np_entropy
 
+from numba import jit, vectorize, void, int8, float64, typeof, types
+
 # riemann distance
 # from pyriemann.estimation import Covariances
 # from pyriemann.utils.distance import distance_riemann
 # dtw
-from fastdtw import fastdtw, dtw
+import fastdtw
 from scipy.spatial.distance import cosine
 
 from copy import copy, deepcopy
@@ -499,11 +501,19 @@ def time_precision(mu, x, pi):
     return np_e ** (- (diff ** 2) / (sig ** 2)) + 0.001
 
 
+# def gaussian(x, mu, sig):
+#     """ Not normally distributed!
+#     """
+#     diff = x - mu
+#     return np_exp((-np_sqrt(np_dot(diff, diff)) ** 2) / (2 * sig ** 2))
+
+@vectorize([float64(float64, float64, float64)])
+@jit(float64(float64, float64, float64), nogil=True, cache=True, nopython=True)
 def gaussian(x, mu, sig):
     """ Not normally distributed!
     """
-    diff = x - mu
-    return np_exp((-np_sqrt(np_dot(diff, diff)) ** 2) / (2 * sig ** 2))
+    diff = np.array([x - mu])
+    return np_exp((-np_sqrt(np_dot(diff, diff)) ** 2.) / (2. * sig ** 2.))
 
 
 def distribution(mu, sig, size):
@@ -518,33 +528,54 @@ def extend_sequence(sequence, item):
     sequence.append(item)
     return sequence
 
-# @profile
+# # @profile
+# def my_dist(a, b):
+#     if a[2] == b[2]:
+#         a_t = (a[0] + np_pi) / 2
+#         b_t = (b[0] + np_pi) / 2
+#         # print("theta:", (1 - np_cos(np_abs(a_t - b_t))))
+#         # print("r:", np_log(np_abs(a[1] - b[1]) + 1) / 6)
+
+#         return 10 * ((1 - np_cos(np_abs(a_t - b_t))) + np_log(np_abs(a[1] - b[1]) + 1) / 4)
+#     else:
+#         return 20
+
+@jit(nogil=True, cache=True, nopython=True)
 def my_dist(a, b):
     if a[2] == b[2]:
         a_t = (a[0] + np_pi) / 2
         b_t = (b[0] + np_pi) / 2
-        # print("theta:", (1 - np_cos(np_abs(a_t - b_t))))
-        # print("r:", np_log(np_abs(a[1] - b[1]) + 1) / 6)
+        a_r = a[1]
+        b_r = b[1]
 
-        return 10 * ((1 - np_cos(np_abs(a_t - b_t))) + np_log(np_abs(a[1] - b[1]) + 1) / 5)
+        return 10 * ((1. - np_cos(np_abs(a_t - b_t))) + np_log(np_abs(a_r - b_r) + 1.) / 5.)
     else:
-        return 15
+        return 20.0
 
 
+# def diff_sequences(seq_a, seq_b):
+
+#     source = [[polar.theta, polar.r, polar.drawing] for polar in seq_a.seq]
+#     # print("source", source)
+
+#     target = [[polar.theta, polar.r, polar.drawing] for polar in seq_b.seq]
+#     # print("target", target)
+
+#     distance, _ = fastdtw.dtw(source, target, dist=my_dist)
+
+#     _gauss = gaussian(distance, 0., 100)
+#     # print("distance", distance, "\tsimilarity", _gauss)
+
+#     return np_clip(_gauss, 0.0001, 1.)
+
+@jit(float64(float64[:,:], float64[:,:]), nopython=False, nogil=True, cache=True, parallel=True)
 def diff_sequences(seq_a, seq_b):
+    distance, _ = fastdtw.dtw(seq_a, seq_b, dist=my_dist)
 
-    source = [[polar.theta, polar.r, polar.drawing] for polar in seq_a.seq]
-    # print("source", source)
-
-    target = [[polar.theta, polar.r, polar.drawing] for polar in seq_b.seq]
-    # print("target", target)
-
-    distance, _ = dtw(source, target, dist=my_dist)
-
-    _gauss = gaussian(distance, 0., 40)
+    _gauss = gaussian(distance, 0., 100.)
     # print("distance", distance, "\tsimilarity", _gauss)
 
-    return np_clip(_gauss, 0.0001, 1.)
+    return _gauss  # np_clip(_gauss, 0.0001, 1.)
 
 
 # def diff_sequences(seq_a, seq_b):
@@ -712,10 +743,13 @@ def find_signaling_candidate(cluster, contrastor_candidate):
     Return the found candidate.
     """
     candidate = None
+
+    contrastor_seq = contrastor_candidate.as_array()
     len_cluster = len(cluster.seqs)
     if len_cluster > 1:
         for seq in cluster.seqs:
-            sim = diff_sequences(seq, contrastor_candidate)
+            _seq = seq.as_array()
+            sim = diff_sequences(_seq, contrastor_seq)
             print("signaling similarity:", sim, seq, "to", contrastor_candidate)
             # remember new potential candidate if the newly calculated similarity is lower than before
             if candidate is None:
@@ -729,18 +763,21 @@ def find_signaling_candidate(cluster, contrastor_candidate):
         return None
 
 
-def within_cluster_similarity_statistics(representations):
+def within_cluster_similarity_statistics(cluster):
     """ Calculate the sequence similarities within a cluster.
 
     Return the similarity matrix.
     """
-    lenrep = len(representations)
+    representations = cluster.seqs
+    _representations = cluster.seqs_as_list()
+    lenrep = len(_representations)
+    
 
     similarities = np.ones((lenrep, lenrep, 3))
     for j in range(lenrep):
         for k in range(j + 1, lenrep):
             # calculate once
-            sim = diff_sequences(representations[j], representations[k])
+            sim = diff_sequences(_representations[j], _representations[k])
             # but fill both triangles of the matrix
             similarities[j, k, :] = [representations[j].id, representations[k].id, sim]
             similarities[k, j, :] = [representations[k].id, representations[j].id, sim]
@@ -757,8 +794,8 @@ def inter_cluster_similarity_statistics(cluster_a, cluster_b):
 
     Return the matrix, mean distance and variance.
     """
-    seqs_a = cluster_a.seqs
-    seqs_b = cluster_b.seqs
+    seqs_a = cluster_a.seqs_as_list()
+    seqs_b = cluster_b.seqs_as_list()
     lenrep_a = len(cluster_a.seqs)
     lenrep_b = len(cluster_b.seqs)
 
@@ -767,7 +804,7 @@ def inter_cluster_similarity_statistics(cluster_a, cluster_b):
         for k in range(lenrep_b):  # sadly have to compare all of them
             # calculate similarity between sequences
             sim = diff_sequences(seqs_a[j], seqs_b[k])
-            similarities[j, k, :] = [seqs_a[j].id, seqs_b[k].id, sim]
+            similarities[j, k, :] = [cluster_a.seqs[j].id, cluster_b.seqs[k].id, sim]
 
     average_cluster_sim = np_mean(similarities[:, :, 2])
     var_cluster_sim = np_var(similarities[:, :, 2])
