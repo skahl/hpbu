@@ -135,7 +135,9 @@ class SequenceLayer(Layer):
                 # predict temporal waiting period until next evidence
                 if len(self.tmp_delay) > 0:
                     self.tmp_seq_average_delay = np_mean(self.tmp_delay) + np_var(self.tmp_delay)
-                else:
+                elif len(self.tmp_delay) == 1:
+                    self.tmp_seq_average_delay = self.tmp_delay[0]
+                else: 
                     self.tmp_seq_average_delay = 0
                 self.tmp_delay.append(self.lower_layer_new_hypo[1])
                 self.log(1, "Temporary sequence length:", len(self.tmp_seq), "/ spanning time:", sum(self.tmp_delay), "avg:", self.tmp_seq_average_delay)
@@ -285,6 +287,7 @@ class SequenceLayer(Layer):
         _seq = Sequence()
         _seq['seq'] = new_seq
         _seq_a = _seq.as_array()
+        tmp_shape = _seq_a.shape[0]
         # try to accelerate processing here:
         # diffs_LH[:, 0] = [diff_sequences(_seq, seq_b[0]) for seq_b in sequences]
 
@@ -292,11 +295,14 @@ class SequenceLayer(Layer):
             # extend the new_seq sequence with the sequence that it will be compared to
             # the better fit will still win
             
-            # s_shape = seq[0].seq.shape[0]
             # tmp_shape = _seq.seq.shape[0]
             _seq_b = seq_b[0].as_array()
-
-            _diff_lh = diff_sequences(_seq_a, _seq_b)
+            s_shape = _seq_b.shape[0]
+            if tmp_shape <= s_shape+2:  # give it some space for error
+                # scale_to_len = tmp_shape / s_shape
+                _diff_lh = diff_sequences(_seq_a, _seq_b) #  * scale_to_len
+            else:
+                _diff_lh = 0.0001
 
             # check if the size of the sequences are sufficient
             # if tmp_shape <= s_shape:

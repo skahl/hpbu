@@ -118,7 +118,7 @@ class Realizations(SequenceLayer):
                 if self.current_mentalstate is not None and self.current_mentalstate.me != []:
                     # TODO: if clusters don't change this could be calculated once in a lookup table
                     # check what other clusters could be expected, given the current me belief as the communication goal
-                    me_cluster = self.current_mentalstate.me[0]
+                    me_cluster = self.current_mentalstate.me[0]  # compare the IDs to similar clusters
                     if me_cluster != max_hypo:
                         # get the top 20% of likely clusters
                         ar_likely_clusters = np.array(self.lower_layer_hypos.dpd)
@@ -127,6 +127,7 @@ class Realizations(SequenceLayer):
                         top_percent_clusters = sorted_likely_clusters[ar_likely_clusters.shape[0] - nth_part:]
                         self.log(3, "index of the percentile split:", nth_part)
 
+                        self.log(1, "Intended cluster", me_cluster, "!= max cluster", max_hypo)
                         self.log(1, "Top 20 percent of other likely clusters:", top_percent_clusters)
                         if me_cluster in top_percent_clusters[:, 1]:
                             self.log(1, "Perceived cluster is closely similar to intended cluster! Assuming similarity between:", me_cluster, max_hypo)

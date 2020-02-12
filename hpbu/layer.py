@@ -300,8 +300,8 @@ class Layer(object):
         """ Allow for dynamic Kalman gain based on free-energy and precision of prediction-error.
         Distribute a linear gain-bias for bottom-up information, decreasing with every hierarchical level.
         """
-        # if "bias_gain" in self.params:
-        #     gain_gain = self.params['bias_gain']
+        if "bias_gain" in self.params:
+            gain_gain = self.params['bias_gain']
         # else:
             
         # gain_gain = 0.5
@@ -317,11 +317,11 @@ class Layer(object):
 
         # general intention-dependent bias 
         if self.intention is None:
-            bias = 0.7
+            bias = gain_gain
         else:
             bias = 0.3
 
-        self.K = kalman_gain(self.free_energy, self.PE.precision, bias, gain_gain=0.66)
+        self.K = kalman_gain(self.free_energy, self.PE.precision, gain_gain, gain_gain=gain_gain)
         
         # if self.name == "Goals":
         #     self.K = kalman_gain(self.free_energy, self.PE.precision, bias[0], gain_gain=gain_gain)
@@ -358,12 +358,13 @@ class Layer(object):
             #     # decrease Kalman Gain for these layers
             #     self.K = 1 - gain_bias # 0.1
             if self.name == "Vision":
-                self.K = 1.0
+                self.K = 0.9
         elif self.intention is not None:
             # during PRODUCTION
 
-            self.K = kalman_gain(self.free_energy, self.PE.precision, gain_bias, gain_gain=0.5)
-
+            self.K = kalman_gain(self.free_energy, self.PE.precision, 0.1, gain_gain=0.5)
+            if self.name == "Vision":
+                self.K = 0.9
             # if self.name in ["Goals", "Schm", "Seq"]:
             #     # decrease Kalman Gain for these layers to be less susceptible to evidence
             #     self.K = 1 - gain_bias # 0.1

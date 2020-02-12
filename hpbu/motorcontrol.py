@@ -343,7 +343,7 @@ class MotorControl(Layer):
                 self.step_counter += 1
                 # store only relevant movements >= 1
                 # np.linalg.norm(self.joint_vector - last_relevant_pos)
-                sampling_frequency = 0.008 # 0.008 # 0.003
+                sampling_frequency = 0.005 # 0.008 # 0.003
                 dist_from_start = (self.step_counter * self.sim_step) % sampling_frequency
 
                 if not self.isDrawing or (dist_from_start < 0.0001 and dist_from_start > -0.0001): 

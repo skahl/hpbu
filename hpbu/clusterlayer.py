@@ -149,9 +149,11 @@ class ClusterLayer(Layer):
                 lrp_idx = self.hypotheses.reps[lrp].dpd_idx
 
                 # create motor intention and clear interfering influences
-                self.lower_layer_evidence[0].equalize()
+                if self.lower_layer_evidence is not None and self.lower_layer_evidence[0] is not None:
+                    self.lower_layer_evidence[0].equalize()
                 self.last_lower_layer_evidence = None
-                self.hypotheses.equalize()
+                if self.hypotheses is not None:
+                    self.hypotheses.equalize()
                 
                 # avg_P = np_mean(self.hypotheses.dpd[:, 0])
                 # var_P = 0.2
