@@ -6,7 +6,10 @@ as it was described in:
 - Kahl, S., & Kopp, S. (2018). A Predictive Processing Model of Perception and Action for Self-Other Distinction. Frontiers in Psychology, 9, 47–14. http://doi.org/10.3389/fpsyg.2018.02421
 
 and in:
-- Kahl (in work). Social Motorics: A predictive processing model for efficient embodied communication
+- Kahl (in press). Social Motorics: A predictive processing model for efficient embodied communication
+
+For these works, the model was trained on handwritten corpus that was specifically recorded for this purpose:
+https://github.com/skahl/handwritten-digits-corpus
 
 ### Build & Install
 
