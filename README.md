@@ -4,6 +4,7 @@ Here I provide the core algorithm for the hierarchical predictive belief update 
 
 as it was described in:
 - Kahl, S., & Kopp, S. (2018). A Predictive Processing Model of Perception and Action for Self-Other Distinction. Frontiers in Psychology, 9, 47–14. http://doi.org/10.3389/fpsyg.2018.02421
+
 and in:
 - Kahl (2020). Social Motorics - a predictive processing model for efficient embodied communication. https://doi.org/10.4119/unibi/2945718
 
@@ -172,4 +173,4 @@ if __name__ == "__main__":
 These examples just show the general setup. By itself it won't do anything interesting.
 
 ---
-Copyright 2017, 2018, 2019 by Sebastian Kahl
+Copyright 2017-2020 by Sebastian Kahl
