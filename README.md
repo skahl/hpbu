@@ -4,9 +4,8 @@ Here I provide the core algorithm for the hierarchical predictive belief update 
 
 as it was described in:
 - Kahl, S., & Kopp, S. (2018). A Predictive Processing Model of Perception and Action for Self-Other Distinction. Frontiers in Psychology, 9, 47–14. http://doi.org/10.3389/fpsyg.2018.02421
-
 and in:
-- Kahl (soon to be published dissertation). Social Motorics - a predictive processing model for efficient embodied communication
+- Kahl (2020). Social Motorics - a predictive processing model for efficient embodied communication. https://doi.org/10.4119/unibi/2945718
 
 For these works, the model was trained on handwritten corpus that was specifically recorded for this purpose:
 https://github.com/skahl/handwritten-digits-corpus
