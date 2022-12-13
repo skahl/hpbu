@@ -176,4 +176,4 @@ if __name__ == "__main__":
 These examples just show the general setup. By itself it won't do anything interesting.
 
 ---
-Copyright 2017-2020 by Sebastian Kahl
+Copyright 2017-2022 by Sebastian Kahl
