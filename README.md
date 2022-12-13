@@ -11,6 +11,9 @@ and in:
 For these works, the model was trained on handwritten corpus that was specifically recorded for this purpose:
 https://github.com/skahl/handwritten-digits-corpus
 
+A demo video of two complete model hierarchies in interaction with one another (coordinating beliefs about handwriting) can be found here:
+https://www.youtube.com/watch?v=5iZDSQYBCQ4
+
 ### Build & Install
 
 To build HPBU, using conda-build:
